@@ -1,0 +1,27 @@
+{
+  "name": "@wpbones/wpkirk",
+  "version": "1.4.0",
+  "scripts": {
+    "dev": "gulp watch",
+    "build": "gulp build",
+    "build:apps": "wp-scripts build resources/assets/apps/app --output-path=public/apps/",
+    "start:apps": "wp-scripts start resources/assets/apps/app --output-path=public/apps/"
+  },
+  "license": "GPL-3.0",
+  "author": "Giovambattista Fazioli <jonfazioli@gmail.com>",
+  "devDependencies": {
+    "@babel/core": "^7.24.3",
+    "@babel/preset-env": "^7.24.3",
+    "@babel/preset-react": "^7.24.1",
+    "@wordpress/scripts": "^27.7.0",
+    "gulp": "^4.0.2",
+    "gulp-babel": "^8.0.0",
+    "gulp-clean-css": "^4.3.0",
+    "gulp-less": "^5.0.0",
+    "gulp-sass": "^5.1.0",
+    "gulp-typescript": "^2.12.2",
+    "gulp-uglify": "^3.0.2",
+    "gulp-watch": "^5.0.1",
+    "sass": "^1.72.0"
+  }
+}
