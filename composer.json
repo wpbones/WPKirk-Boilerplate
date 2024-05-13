@@ -3,28 +3,28 @@
   "type": "wordpress-plugin",
   "description": "A WP Bones template WordPress plugin",
   "keywords": ["wordpress"],
-  "homepage": "http://wpbones.wordpress.com",
+  "homepage": "https://wpbones.vercel.app/",
   "license": "GPL-3.0",
-  "authors": [{
-    "name": "Giovambattista Fazioli",
-    "email": "giovambattista.fazioli@gmail.com",
-    "homepage": "http://undolog.com"
-  }],
+  "authors": [
+    {
+      "name": "Giovambattista Fazioli",
+      "email": "giovambattista.fazioli@gmail.com",
+      "homepage": "http://undolog.com"
+    }
+  ],
   "support": {
     "issues": "https://github.com/wpbones/WPKirk/issues",
     "source": "https://github.com/wpbones/WPKirk/"
   },
   "require": {
     "php": ">=7.3",
-    "wpbones/wpbones": "dev-master"
+    "wpbones/wpbones": "~1.4"
   },
   "autoload": {
     "psr-4": {
       "WPKirk\\": "plugin/"
     },
-    "files": [
-      "functions.php"
-    ]
+    "files": ["functions.php"]
   },
   "scripts": {
     "post-autoload-dump": [
