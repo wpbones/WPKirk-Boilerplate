@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "18bd284289bb3d76b1246f0f8f3fc87c",
+    "content-hash": "6c00e613b57c73aa904ba9b8fabd953f",
     "packages": [
         {
             "name": "eftec/bladeone",
@@ -67,23 +67,22 @@
         },
         {
             "name": "wpbones/wpbones",
-            "version": "dev-master",
+            "version": "1.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/WPBones.git",
-                "reference": "b7b95fc71c87db59a63173b576b4e3d2bded31e1"
+                "reference": "d0bc69e0f902f48511d0218eb5dc4a177d239371"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/b7b95fc71c87db59a63173b576b4e3d2bded31e1",
-                "reference": "b7b95fc71c87db59a63173b576b4e3d2bded31e1",
+                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/d0bc69e0f902f48511d0218eb5dc4a177d239371",
+                "reference": "d0bc69e0f902f48511d0218eb5dc4a177d239371",
                 "shasum": ""
             },
             "require": {
                 "eftec/bladeone": "^4.13",
                 "php": ">=7.4"
             },
-            "default-branch": true,
             "type": "library",
             "autoload": {
                 "files": [
@@ -118,15 +117,13 @@
                 "issues": "https://github.com/wpbones/WPBones/issues",
                 "source": "https://github.com/wpbones/WPBones/"
             },
-            "time": "2024-05-10T14:11:54+00:00"
+            "time": "2024-05-27T10:21:47+00:00"
         }
     ],
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "wpbones/wpbones": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
