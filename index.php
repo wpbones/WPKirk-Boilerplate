@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Plugin Name: WP Kirk
+ * Plugin Name: WP Kirk Boilerplate
  * Plugin URI: https://github.com/wpbones/WPKirk
  * Description: WP Bones template WordPress plugin
  * Version: 1.4.0

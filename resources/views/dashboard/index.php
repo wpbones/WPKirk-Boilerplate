@@ -9,5 +9,6 @@
 
 <div class="wp-kirk wrap">
   <h1><?php echo $plugin->Name; ?> boilerplate main view</h1>
+  <h3>PHP Version <?php echo phpversion(); ?></h3>
   <div id="react-app"></div>
 </div>
