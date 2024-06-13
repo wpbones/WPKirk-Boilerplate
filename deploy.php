@@ -12,7 +12,7 @@
  *   @unlink("{$path}/myfile");
  *
  * Delete a folder
- *   $this->deleteDirectory("{$path}/docs");
+ *   $console->deleteDirectory("{$path}/docs");
  *
  *
  */
