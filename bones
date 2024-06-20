@@ -595,13 +595,13 @@ namespace Bones {
     {
       try {
         /*
-                |--------------------------------------------------------------------------
-                | Load WordPress
-                |--------------------------------------------------------------------------
-                |
-                | We have to load the WordPress environment.
-                |
-                */
+        |--------------------------------------------------------------------------
+        | Load WordPress
+        |--------------------------------------------------------------------------
+        |
+        | We have to load the WordPress environment.
+        |
+        */
         if (!file_exists(__DIR__ . '/../../../wp-load.php')) {
           echo "\n\033[33;5;82mWarning!!\n";
           echo "\n\033[38;5;82m\t" .
@@ -619,16 +619,16 @@ namespace Bones {
 
       try {
         /*
-                |--------------------------------------------------------------------------
-                | Register The Auto Loader
-                |--------------------------------------------------------------------------
-                |
-                | Composer provides a convenient, automatically generated class loader
-                | for our application. We just need to utilize it! We'll require it
-                | into the script here so that we do not have to worry about the
-                | loading of any classes "manually". Feels great to relax.
-                |
-                */
+        |--------------------------------------------------------------------------
+        | Register The Auto Loader
+        |--------------------------------------------------------------------------
+        |
+        | Composer provides a convenient, automatically generated class loader
+        | for our application. We just need to utilize it! We'll require it
+        | into the script here so that we do not have to worry about the
+        | loading of any classes "manually". Feels great to relax.
+        |
+        */
 
         if (file_exists(__DIR__ . '/vendor/autoload.php')) {
           require __DIR__ . '/vendor/autoload.php';
@@ -640,11 +640,11 @@ namespace Bones {
 
       try {
         /*
-                 |--------------------------------------------------------------------------
-                 | Load this plugin env
-                 |--------------------------------------------------------------------------
-                 |
-                 */
+        |--------------------------------------------------------------------------
+        | Load this plugin env
+        |--------------------------------------------------------------------------
+        |
+        */
 
         if (file_exists(__DIR__ . '/bootstrap/plugin.php')) {
           require_once __DIR__ . '/bootstrap/plugin.php';
@@ -780,6 +780,36 @@ namespace Bones {
       }
 
       echo "\n\n";
+    }
+
+    /**
+     * Return true if the command is available in the system.
+     *
+     * @return string
+     */
+    protected function isCommandAvailable($command)
+    {
+      $whereCommand = (PHP_OS_FAMILY === 'Windows') ? 'where' : 'command -v';
+      $output = shell_exec("$whereCommand $command");
+      return !empty($output);
+    }
+
+    /**
+     * Returns the available package manager
+     *
+     * @return string|null The name of the available package manager (yarn, npm, pnpm, bun) or null if none is available.
+     */
+    protected function getAvailablePackageManager()
+    {
+      $packageManagers = ['yarn', 'npm', 'pnpm', 'bun'];
+
+      foreach ($packageManagers as $manager) {
+        if ($this->isCommandAvailable($manager)) {
+          return $manager;
+        }
+      }
+
+      return null;
     }
 
     /**
@@ -1341,13 +1371,13 @@ namespace Bones {
     }
 
     /*
-         |--------------------------------------------------------------------------
-         | Public task
-         |--------------------------------------------------------------------------
-         |
-         | Here you will find all tasks that a user can run from console.
-         |
-         */
+    |--------------------------------------------------------------------------
+    | Public task
+    |--------------------------------------------------------------------------
+    |
+    | Here you will find all tasks that a user can run from console.
+    |
+    */
 
     /**
      * Create a deployment version of the plugin
@@ -1383,19 +1413,42 @@ namespace Bones {
 
         do_action('wpbones_console_deploy_before_build_assets', $this, $path);
 
-        // run yarn production
+        // @deprecated
         $command = apply_filters(
           'wpbones_console_deploy_build_assets',
           'yarn build'
         );
 
-        if ($command) {
-          $this->info('🕐 Build for production');
-          shell_exec($command);
-          $this->info("\e[1A👍");
+        $packageManager = $this->getAvailablePackageManager();
+
+
+        if ($packageManager) {
+
+          $this->info("✅ Found '$packageManager' as package manager");
+
+          $this->ask("Do you want to run '$packageManager build' to build assets? (y/n)", function ($answer) use ($packageManager, $path) {
+            if (strtolower($answer) === 'y') {
+              $this->info('🕐 Build for production');
+              shell_exec("{$packageManager} build");
+              $this->info("\e[1A👍");
+              do_action('wpbones_console_deploy_after_build_assets', $this, $path);
+            } else {
+              $this->ask("Enter the package manager to build assets or press return to skip the build", function ($answer) {
+                if (empty($answer)) {
+                  $this->info('🕐 Skip build assets');
+                  return;
+                }
+                $this->info('🕐 Build for production');
+                shell_exec("{$answer} build");
+                $this->info("\e[1A👍");
+              });
+            }
+          });
+        } else {
+          $this->info("🛑 No package manager found. The build assets will be skipped");
         }
 
-        do_action('wpbones_console_deploy_after_build_assets', $this, $path);
+
 
         // files and folders to skip
         $this->skipWhenDeploy = [
