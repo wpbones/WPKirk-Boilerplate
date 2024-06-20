@@ -1426,29 +1426,26 @@ namespace Bones {
 
           $this->info("✅ Found '$packageManager' as package manager");
 
-          $this->ask("Do you want to run '$packageManager build' to build assets? (y/n)", function ($answer) use ($packageManager, $path) {
-            if (strtolower($answer) === 'y') {
-              $this->info('🕐 Build for production');
-              shell_exec("{$packageManager} build");
-              $this->info("\e[1A👍");
-              do_action('wpbones_console_deploy_after_build_assets', $this, $path);
+          $answer = $this->ask("Do you want to run '$packageManager build' to build assets? (y/n)", 'y');
+
+          if (strtolower($answer) === 'y') {
+            $this->info("📦 Build for production by using '{$packageManager} build'");
+            shell_exec("{$packageManager} build");
+            $this->info("✅ Build assets successfully");
+            do_action('wpbones_console_deploy_after_build_assets', $this, $path);
+          } else {
+            $answer = $this->ask("Enter the package manager to build assets (press RETURN to skip the build)", '');
+            if (empty($answer)) {
+              $this->info('⏭︎ Skip build assets');
             } else {
-              $this->ask("Enter the package manager to build assets or press return to skip the build", function ($answer) {
-                if (empty($answer)) {
-                  $this->info('🕐 Skip build assets');
-                  return;
-                }
-                $this->info('🕐 Build for production');
-                shell_exec("{$answer} build");
-                $this->info("\e[1A👍");
-              });
+              $this->info("📦 Build for production by using '{$answer} build'");
+              shell_exec("{$answer} build");
+              $this->info("✅ Build assets successfully");
             }
-          });
+          }
         } else {
           $this->info("🛑 No package manager found. The build assets will be skipped");
         }
-
-
 
         // files and folders to skip
         $this->skipWhenDeploy = [
@@ -1491,9 +1488,9 @@ namespace Bones {
 
         $this->rootDeploy = __DIR__;
 
-        $this->info("🕐 Copying to {$path}");
+        $this->info("🚧 Copying to {$path}");
         $this->xcopy(__DIR__, $path);
-        $this->info("\e[1A👍");
+        $this->info("✅ Copy completed");
 
         /**
          * Fires when the console deploy is completed.
@@ -1503,7 +1500,8 @@ namespace Bones {
          */
         do_action('wpbones_console_deploy_completed', $this, $path);
 
-        $this->info('👏 Deploy Completed!');
+        $this->info("\n\e[5m👏 Deploy Completed!\e[0m");
+        $this->info("\n🚀 You can now deploy the plugin from the path: {$path}\n");
       }
     }
 
