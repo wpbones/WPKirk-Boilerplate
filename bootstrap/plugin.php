@@ -1,7 +1,7 @@
 <?php
 
 if (!defined('ABSPATH')) {
-    exit;
+  exit;
 }
 
 /*
@@ -14,11 +14,11 @@ if (!defined('ABSPATH')) {
 |
 */
 if (class_exists('\WPKirk\WPBones\Foundation\Plugin')) {
-    $plugin = new \WPKirk\WPBones\Foundation\Plugin(
-        realpath(__DIR__ . '/../')
-    );
+  $plugin = new \WPKirk\WPBones\Foundation\Plugin(
+    realpath(__DIR__ . '/../')
+  );
 
-    /*
+  /*
     |--------------------------------------------------------------------------
     | Return The Plugin
     |--------------------------------------------------------------------------
@@ -29,10 +29,10 @@ if (class_exists('\WPKirk\WPBones\Foundation\Plugin')) {
     |
     */
 
-    /**
-     * Fire when the plugin is loaded
-     */
-    do_action('wp-kirk_loaded');
+  /**
+   * Fire when the plugin is loaded
+   */
+  do_action('wp-kirk_loaded');
 
-    return $plugin;
+  return $plugin;
 }
