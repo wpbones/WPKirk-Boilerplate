@@ -1,7 +1,9 @@
 <?php
 
+use WPKirk\WPBones\Foundation\Plugin;
+
 if (!defined('ABSPATH')) {
-  exit;
+    exit;
 }
 
 /*
@@ -14,25 +16,25 @@ if (!defined('ABSPATH')) {
 |
 */
 if (class_exists('\WPKirk\WPBones\Foundation\Plugin')) {
-  $plugin = new \WPKirk\WPBones\Foundation\Plugin(
-    realpath(__DIR__ . '/../')
-  );
+    $plugin = new Plugin(
+        realpath(__DIR__ . '/../')
+    );
 
-  /*
-    |--------------------------------------------------------------------------
-    | Return The Plugin
-    |--------------------------------------------------------------------------
-    |
-    | This script returns the plugin instance. The instance is given to
-    | the calling script so we can separate the building of the instances
-    | from the actual running of the application and sending responses.
-    |
-    */
+    /*
+      |--------------------------------------------------------------------------
+      | Return The Plugin
+      |--------------------------------------------------------------------------
+      |
+      | This script returns the plugin instance. The instance is given to
+      | the calling script, so we can separate the building of the instances
+      | from the actual running of the application and sending responses.
+      |
+      */
 
-  /**
-   * Fire when the plugin is loaded
-   */
-  do_action('wp-kirk_loaded');
+    /**
+     * Fire when the plugin is loaded
+     */
+    do_action('wp-kirk_loaded');
 
-  return $plugin;
+    return $plugin;
 }

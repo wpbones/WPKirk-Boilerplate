@@ -42,7 +42,6 @@ if (!function_exists('WPKirk')) {
     /**
      * Return the instance of plugin.
      *
-     * @return Plugin
      */
     function WPKirk()
     {
