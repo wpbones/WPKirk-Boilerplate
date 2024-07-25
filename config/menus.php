@@ -1,5 +1,9 @@
 <?php
 
+if (!defined('ABSPATH')) {
+    exit();
+}
+
 /*
 |--------------------------------------------------------------------------
 | Plugin Menus routes
@@ -11,20 +15,20 @@
 */
 
 return [
-  'wp_kirk_slug_menu' => [
-    "page_title" => "WP Kirk Page",
-    "menu_title" => "WP Kirk Menu",
-    'capability' => 'read',
-    'icon'       => 'wpbones-logo-menu.png',
-    'items'      => [
-      [
-        "page_title" => "Main View",
-        "menu_title" => "Main View",
+    'wp_kirk_slug_menu' => [
+        "page_title" => "WP Kirk Page",
+        "menu_title" => "WP Kirk Menu",
         'capability' => 'read',
-        'route'      => [
-          'get' => 'Dashboard\DashboardController@index'
-        ],
-      ],
+        'icon' => 'wpbones-logo-menu.png',
+        'items' => [
+            [
+                "page_title" => "Main View",
+                "menu_title" => "Main View",
+                'capability' => 'read',
+                'route' => [
+                    'get' => 'Dashboard\DashboardController@index'
+                ],
+            ],
+        ]
     ]
-  ]
 ];

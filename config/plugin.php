@@ -1,5 +1,9 @@
 <?php
 
+if (!defined('ABSPATH')) {
+    exit();
+}
+
 return [
 
     /*
@@ -20,85 +24,85 @@ return [
     'log_level' => 'debug',
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | Screen options
-  |--------------------------------------------------------------------------
-  |
-  | Here is where you can register the screen options for List Table.
-  |
-  */
+    /*
+    |--------------------------------------------------------------------------
+    | Screen options
+    |--------------------------------------------------------------------------
+    |
+    | Here is where you can register the screen options for List Table.
+    |
+    */
 
-  'screen_options' => [ ],
+    'screen_options' => [],
 
-  /*
-  |--------------------------------------------------------------------------
-  | Custom Post Types
-  |--------------------------------------------------------------------------
-  |
-  | Here is where you can register the Custom Post Types.
-  |
-  */
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Post Types
+    |--------------------------------------------------------------------------
+    |
+    | Here is where you can register the Custom Post Types.
+    |
+    */
 
-  'custom_post_types' => [ ],
+    'custom_post_types' => [],
 
-  /*
-  |--------------------------------------------------------------------------
-  | Custom Taxonomies
-  |--------------------------------------------------------------------------
-  |
-  | Here is where you can register the Custom Taxonomy Types.
-  |
-  */
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Taxonomies
+    |--------------------------------------------------------------------------
+    |
+    | Here is where you can register the Custom Taxonomy Types.
+    |
+    */
 
-  'custom_taxonomy_types' => [ ],
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | Shortcodes
-  |--------------------------------------------------------------------------
-  |
-  | Here is where you can register the Shortcodes.
-  |
-  */
-
-  'shortcodes' => [ ],
-
-  /*
-  |--------------------------------------------------------------------------
-  | Widgets
-  |--------------------------------------------------------------------------
-  |
-  | Here is where you can register all of the Widget for a plugin.
-  |
-  */
-
-  'widgets' => [ ],
+    'custom_taxonomy_types' => [],
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | Ajax
-  |--------------------------------------------------------------------------
-  |
-  | Here is where you can register your own Ajax actions.
-  |
-  */
+    /*
+    |--------------------------------------------------------------------------
+    | Shortcodes
+    |--------------------------------------------------------------------------
+    |
+    | Here is where you can register the Shortcodes.
+    |
+    */
 
-  'ajax' => [ ],
+    'shortcodes' => [],
 
-  /*
-  |--------------------------------------------------------------------------
-  | Autoloaded Service Providers
-  |--------------------------------------------------------------------------
-  |
-  | The service providers listed here will be automatically loaded on the
-  | init to your plugin. Feel free to add your own services to
-  | this array to grant expanded functionality to your applications.
-  |
-  */
+    /*
+    |--------------------------------------------------------------------------
+    | Widgets
+    |--------------------------------------------------------------------------
+    |
+    | Here is where you can register all of the Widget for a plugin.
+    |
+    */
 
-  'providers' => [ ]
+    'widgets' => [],
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ajax
+    |--------------------------------------------------------------------------
+    |
+    | Here is where you can register your own Ajax actions.
+    |
+    */
+
+    'ajax' => [],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Autoloaded Service Providers
+    |--------------------------------------------------------------------------
+    |
+    | The service providers listed here will be automatically loaded on the
+    | init to your plugin. Feel free to add your own services to
+    | this array to grant expanded functionality to your applications.
+    |
+    */
+
+    'providers' => []
 
 ];
