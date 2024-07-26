@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
 | Plugin Menus routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register all of the menu routes for a plugin.
+| Here is where you can register all the menu routes for a plugin.
 | In this context, the route are the menu link.
 |
 */
