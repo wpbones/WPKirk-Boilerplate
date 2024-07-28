@@ -2,7 +2,9 @@
   "name": "wpbones/wpkirk",
   "type": "wordpress-plugin",
   "description": "A WP Bones template WordPress plugin",
-  "keywords": ["wordpress"],
+  "keywords": [
+    "wordpress"
+  ],
   "homepage": "https://wpbones.vercel.app/",
   "license": "GPL-3.0",
   "authors": [
@@ -17,14 +19,16 @@
     "source": "https://github.com/wpbones/WPKirk/"
   },
   "require": {
-    "php": ">=7.3",
-    "wpbones/wpbones": "~1.4"
+    "php": ">=7.4",
+    "wpbones/wpbones": "dev-master"
   },
   "autoload": {
     "psr-4": {
       "WPKirk\\": "plugin/"
     },
-    "files": ["functions.php"]
+    "files": [
+      "functions.php"
+    ]
   },
   "scripts": {
     "post-autoload-dump": [
