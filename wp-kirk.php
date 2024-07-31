@@ -4,7 +4,7 @@
  * Plugin Name: WP Kirk
  * Plugin URI: https://github.com/wpbones/WPKirk
  * Description: WP Bones template WordPress plugin
- * Version: 1.5.5
+ * Version: 1.5.6
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Author: Giovambattista Fazioli
