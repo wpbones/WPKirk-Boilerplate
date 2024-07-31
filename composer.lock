@@ -71,12 +71,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/WPBones.git",
-                "reference": "2709b47d6d262c7c7bfffc60147c37b19e7e12fb"
+                "reference": "dd5f517c75992b77b078e23122b9f3c539637a81"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/2709b47d6d262c7c7bfffc60147c37b19e7e12fb",
-                "reference": "2709b47d6d262c7c7bfffc60147c37b19e7e12fb",
+                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/dd5f517c75992b77b078e23122b9f3c539637a81",
+                "reference": "dd5f517c75992b77b078e23122b9f3c539637a81",
                 "shasum": ""
             },
             "require": {
@@ -118,7 +118,7 @@
                 "issues": "https://github.com/wpbones/WPBones/issues",
                 "source": "https://github.com/wpbones/WPBones/"
             },
-            "time": "2024-07-31T10:51:21+00:00"
+            "time": "2024-07-31T11:08:07+00:00"
         }
     ],
     "packages-dev": [],
