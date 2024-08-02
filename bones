@@ -1355,16 +1355,15 @@ namespace Bones {
          */
         protected function ask(string $str, ?string $default = ''): string
         {
-            echo "\n\e[38;5;33m$str" .
+            $str = "\n\e[38;5;33m$str" .
                 (empty($default) ? '' : " (default: {$default})") .
                 "\e[0m ";
 
-            $handle = fopen('php://stdin', 'r');
-            $line = fgets($handle);
+            // Use readline to get the user input
+            $line = readline($str);
 
-            fclose($handle);
-
-            $line = trim($line, " \n\r");
+            // Trim the input to remove extra spaces or newlines
+            $line = trim($line);
 
             return $line ?: $default;
         }
