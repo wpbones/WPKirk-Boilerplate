@@ -1,13 +1,19 @@
 {
   "name": "@wpbones/wpkirk",
-  "version": "1.5.10",
+  "version": "1.6.0",
   "scripts": {
     "start:gulp": "gulp watch",
     "build:gulp": "gulp build",
     "build:apps": "wp-scripts build resources/assets/apps/app --output-path=public/apps/",
     "start:apps": "wp-scripts start resources/assets/apps/app --output-path=public/apps/",
     "build": "run-s build:gulp build:apps",
-    "start": "run-s start:gulp start:apps"
+    "start": "run-s start:gulp start:apps",
+    "make-pot": "wp i18n make-pot . localization/wp-kirk.pot --slug=wp-kirk --domain=wp-kirk --exclude=node_modules,resources/assets",
+    "make-json": "wp i18n make-json localization/ --no-purge",
+    "packages-update": "wp-scripts packages-update",
+    "check-engines": "wp-scripts check-engines",
+    "check-licenses": "wp-scripts check-licenses",
+    "format": "wp-scripts format"
   },
   "license": "GPL-3.0",
   "author": "Giovambattista Fazioli <jonfazioli@gmail.com>",
