@@ -1,6 +1,6 @@
-=== WP Kirk ===
+=== WP Kirk Boilerplate ===
 Contributors: gfazioli
-Donate link: http://undolog.com
+Donate link: https://wpbones.vercel.app/
 Tags: template, wpbones
 Requires at least: 6.2
 Tested up to: 6.6
@@ -8,11 +8,11 @@ Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-WP Bones boilerplate plugin.
+WP Bones Boilerplate plugin.
 
 == Description ==
 
-WP Bones boilerplate plugin
+WP Bones Boilerplate plugin
 
 == Installation ==
 
