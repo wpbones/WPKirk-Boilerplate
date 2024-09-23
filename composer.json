@@ -1,7 +1,7 @@
 {
   "name": "wpbones/wpkirk",
   "type": "wordpress-plugin",
-  "description": "A WP Bones template WordPress plugin",
+  "description": "A WP Bones Boilerplate WordPress plugin",
   "keywords": [
     "wordpress"
   ],
