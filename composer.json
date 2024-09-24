@@ -20,7 +20,7 @@
   },
   "require": {
     "php": ">=7.4",
-    "wpbones/wpbones": "dev-dev"
+    "wpbones/wpbones": "~1.6"
   },
   "autoload": {
     "psr-4": {
