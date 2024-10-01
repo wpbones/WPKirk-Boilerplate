@@ -4,7 +4,7 @@
 
 # WP Bones Boilerplate WordPress Plugin
 
-WP Kirk Boilerplate is your starting point to create a WordPress plugin using [WP Bones](https://wpbones.vercel.app/) Framework Library.
+WP Kirk Boilerplate is your starting point to create a WordPress plugin using [WP Bones](https://wpbones.com/) Framework Library.
 
 ## Installation
 
@@ -16,4 +16,4 @@ composer install
 
 ## Documentation
 
-You'll find the [complete docs here](https://wpbones.vercel.app/docs).
+You'll find the [complete docs here](https://wpbones.com/docs).
