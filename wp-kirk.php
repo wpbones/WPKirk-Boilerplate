@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: WP Kirk Boilerplate
- * Plugin URI: https://github.com/wpbones/WPKirk
+ * Plugin URI: https://github.com/wpbones/WPKirk-Boilerplate
  * Description: WP Bones Boilerplate WordPress plugin
  * Version: 1.6.0
  * Requires at least: 6.2
@@ -17,7 +17,7 @@
  */
 
 if (!defined('ABSPATH')) {
-    exit();
+  exit();
 }
 
 /*
