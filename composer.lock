@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "eftec/bladeone",
-            "version": "4.13",
+            "version": "4.16",
             "source": {
                 "type": "git",
                 "url": "https://github.com/EFTEC/BladeOne.git",
-                "reference": "a24ce564a681fa3e37b2490952915c403ee9e56a"
+                "reference": "94570df4cd5e81a1efd0bb25d451bd715d529279"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/EFTEC/BladeOne/zipball/a24ce564a681fa3e37b2490952915c403ee9e56a",
-                "reference": "a24ce564a681fa3e37b2490952915c403ee9e56a",
+                "url": "https://api.github.com/repos/EFTEC/BladeOne/zipball/94570df4cd5e81a1efd0bb25d451bd715d529279",
+                "reference": "94570df4cd5e81a1efd0bb25d451bd715d529279",
                 "shasum": ""
             },
             "require": {
@@ -61,22 +61,22 @@
             ],
             "support": {
                 "issues": "https://github.com/EFTEC/BladeOne/issues",
-                "source": "https://github.com/EFTEC/BladeOne/tree/4.13"
+                "source": "https://github.com/EFTEC/BladeOne/tree/4.16"
             },
-            "time": "2024-03-26T21:35:25+00:00"
+            "time": "2024-10-11T17:41:08+00:00"
         },
         {
             "name": "wpbones/wpbones",
-            "version": "1.6.5",
+            "version": "1.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/WPBones.git",
-                "reference": "afaca71894f717ab293575c5fe560f8461662871"
+                "reference": "01e9a3c70dee3c842c3d6fc54d532304487b197a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/afaca71894f717ab293575c5fe560f8461662871",
-                "reference": "afaca71894f717ab293575c5fe560f8461662871",
+                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/01e9a3c70dee3c842c3d6fc54d532304487b197a",
+                "reference": "01e9a3c70dee3c842c3d6fc54d532304487b197a",
                 "shasum": ""
             },
             "require": {
@@ -117,7 +117,7 @@
                 "issues": "https://github.com/wpbones/WPBones/issues",
                 "source": "https://github.com/wpbones/WPBones/"
             },
-            "time": "2024-10-01T15:51:27+00:00"
+            "time": "2024-10-16T12:42:22+00:00"
         }
     ],
     "packages-dev": [],
