@@ -4,58 +4,57 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WP Kirk Boilerplate 1.6.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-kirk\n"
-"POT-Creation-Date: 2024-11-12T12:11:09+00:00\n"
-"PO-Revision-Date: 2024-11-12 13:11+0100\n"
-"Last-Translator: \n"
-"Language-Team: \n"
-"Language: it\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.5\n"
+"POT-Creation-Date: 2024-11-12T12:11:09+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: wp-kirk\n"
 
 #. Plugin Name of the plugin
 #: wp-kirk.php
 msgid "WP Kirk Boilerplate"
-msgstr "WP Kirk Boilerplate"
+msgstr ""
 
 #. Plugin URI of the plugin
 #: wp-kirk.php
 msgid "https://github.com/wpbones/WPKirk-Boilerplate"
-msgstr "https://github.com/wpbones/WPKirk-Boilerplate"
+msgstr ""
 
 #. Description of the plugin
 #: wp-kirk.php
 msgid "WP Bones Boilerplate WordPress plugin"
-msgstr "WP Bones Boilerplate Plugin WordPress"
+msgstr ""
 
 #. Author of the plugin
 #: wp-kirk.php
 msgid "Giovambattista Fazioli"
-msgstr "Giovambattista Fazioli"
+msgstr ""
 
 #. Author URI of the plugin
 #: wp-kirk.php
 msgid "https://wpbones.com/"
-msgstr "https://wpbones.com/"
+msgstr ""
 
 #: resources/views/dashboard/index.php:13
 msgid "Config Menu"
-msgstr "Menu di configurazione"
+msgstr ""
 
 #: resources/views/dashboard/index.php:17
 msgid "Controller"
-msgstr "Controllore"
+msgstr ""
 
 #: resources/views/dashboard/index.php:25
 msgid "PHP Version"
-msgstr "Versione PHP"
+msgstr ""
 
 #: resources/views/dashboard/index.php:29
 msgid "ReactJS Application"
-msgstr "Applicazione ReactJS"
+msgstr ""
 
 #: public/apps/app.js:1
 msgid "Say Hello, WP Bones Application"
-msgstr "Saluta, Applicazione WP Bones"
+msgstr ""

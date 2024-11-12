@@ -1,1 +1,1 @@
-(()=>{"use strict";const e=window.React,{render:t}=wp.element;t((0,e.createElement)((()=>(0,e.createElement)(e.Fragment,null,(0,e.createElement)("h2",null,"Say Hello, WP Bones Application"))),null),document.getElementById("react-app"))})();
+(()=>{"use strict";const e=window.React,n=window.wp.i18n,{render:t}=wp.element;t((0,e.createElement)((()=>(0,e.createElement)(e.Fragment,null,(0,e.createElement)("h2",null,(0,n.__)("Say Hello, WP Bones Application","wp-kirk")))),null),document.getElementById("react-app"))})();
