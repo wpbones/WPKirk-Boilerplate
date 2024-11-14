@@ -292,12 +292,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/WPBones.git",
-                "reference": "4e8733669e8b9dfede74b460b50d50c27dfd4639"
+                "reference": "df45c31125fff557bcb18422382ddfbfd534bb6f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/4e8733669e8b9dfede74b460b50d50c27dfd4639",
-                "reference": "4e8733669e8b9dfede74b460b50d50c27dfd4639",
+                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/df45c31125fff557bcb18422382ddfbfd534bb6f",
+                "reference": "df45c31125fff557bcb18422382ddfbfd534bb6f",
                 "shasum": ""
             },
             "require": {
@@ -344,7 +344,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-11-13T10:16:44+00:00"
+            "time": "2024-11-14T07:17:13+00:00"
         },
         {
             "name": "wpbones/wpkirk-helpers",
@@ -352,12 +352,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/wpkirk-helpers.git",
-                "reference": "587fda5129f7b17b3d22be899563b15f4eda3ecf"
+                "reference": "ad7d0523ca3f54666b09530bafcfba705a5a912b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/wpkirk-helpers/zipball/587fda5129f7b17b3d22be899563b15f4eda3ecf",
-                "reference": "587fda5129f7b17b3d22be899563b15f4eda3ecf",
+                "url": "https://api.github.com/repos/wpbones/wpkirk-helpers/zipball/ad7d0523ca3f54666b09530bafcfba705a5a912b",
+                "reference": "ad7d0523ca3f54666b09530bafcfba705a5a912b",
                 "shasum": ""
             },
             "require": {
@@ -393,7 +393,7 @@
                 "issues": "https://github.com/wpbones/wpkirk-helpers/issues",
                 "source": "https://github.com/wpbones/wpkirk-helpers/tree/dev"
             },
-            "time": "2024-11-12T16:04:29+00:00"
+            "time": "2024-11-14T06:19:56+00:00"
         }
     ],
     "packages-dev": [],
