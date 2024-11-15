@@ -352,12 +352,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/wpkirk-helpers.git",
-                "reference": "ad7d0523ca3f54666b09530bafcfba705a5a912b"
+                "reference": "99cb2be87118dc6a665fb2dc4ccf9eb7c1a51283"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/wpkirk-helpers/zipball/ad7d0523ca3f54666b09530bafcfba705a5a912b",
-                "reference": "ad7d0523ca3f54666b09530bafcfba705a5a912b",
+                "url": "https://api.github.com/repos/wpbones/wpkirk-helpers/zipball/99cb2be87118dc6a665fb2dc4ccf9eb7c1a51283",
+                "reference": "99cb2be87118dc6a665fb2dc4ccf9eb7c1a51283",
                 "shasum": ""
             },
             "require": {
@@ -393,7 +393,7 @@
                 "issues": "https://github.com/wpbones/wpkirk-helpers/issues",
                 "source": "https://github.com/wpbones/wpkirk-helpers/tree/dev"
             },
-            "time": "2024-11-14T06:19:56+00:00"
+            "time": "2024-11-15T09:45:32+00:00"
         }
     ],
     "packages-dev": [],
