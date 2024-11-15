@@ -66,19 +66,6 @@
             "time": "2024-10-11T17:41:08+00:00"
         },
         {
-<<<<<<< HEAD
-            "name": "wpbones/wpbones",
-            "version": "1.7.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/wpbones/WPBones.git",
-                "reference": "01e9a3c70dee3c842c3d6fc54d532304487b197a"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/01e9a3c70dee3c842c3d6fc54d532304487b197a",
-                "reference": "01e9a3c70dee3c842c3d6fc54d532304487b197a",
-=======
             "name": "symfony/deprecation-contracts",
             "version": "v3.5.0",
             "source": {
@@ -311,7 +298,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/wpbones/WPBones/zipball/2b808686c44a308ca97144ab570817c373076823",
                 "reference": "2b808686c44a308ca97144ab570817c373076823",
->>>>>>> dev
                 "shasum": ""
             },
             "require": {
@@ -352,9 +338,6 @@
                 "issues": "https://github.com/wpbones/WPBones/issues",
                 "source": "https://github.com/wpbones/WPBones/"
             },
-<<<<<<< HEAD
-            "time": "2024-10-16T12:42:22+00:00"
-=======
             "funding": [
                 {
                     "url": "https://github.com/wpbones",
@@ -411,7 +394,6 @@
                 "source": "https://github.com/wpbones/wpkirk-helpers/tree/2.0.0"
             },
             "time": "2024-11-15T09:46:18+00:00"
->>>>>>> dev
         }
     ],
     "packages-dev": [],
