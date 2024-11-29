@@ -7,6 +7,8 @@
  |
 -->
 
+<?php ob_start() ?>
+
 <div class="wp-kirk wrap wp-kirk-sample">
 
   <div class="wp-kirk-toc-content">

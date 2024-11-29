@@ -32,6 +32,20 @@
   	 border-radius: 0 0 8px 8px;
 	}
 
+	.line-highlight {
+    position: absolute;
+    left: 0;
+    right: 0;
+    padding: inherit 0;
+    margin-top: 0.6rem !important;
+    background: hsla(0,0,100%,0.16);
+    border-top: 1px solid rgba(250, 128, 114, .4);
+    border-bottom: 1px solid rgba(250, 128, 114, .4);
+    pointer-events: none;
+    line-height: inherit;
+    white-space: pre;
+	}
+
 	code.inline {
     border-radius: 3px;
     font-size: 0.9em;
