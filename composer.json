@@ -20,7 +20,7 @@
   },
   "require": {
     "php": ">=7.4",
-    "wpbones/wpbones": "~1.8",
+    "wpbones/wpbones": "dev-master",
     "wpbones/wpkirk-helpers": "~2.0"
   },
   "autoload": {

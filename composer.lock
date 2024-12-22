@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cc1f7b9f2e5db7e056175869f8dbd38b",
+    "content-hash": "3f69b623e551a9145f74e8ac908514f8",
     "packages": [
         {
             "name": "eftec/bladeone",
@@ -288,22 +288,23 @@
         },
         {
             "name": "wpbones/wpbones",
-            "version": "1.8.1",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/WPBones.git",
-                "reference": "4442860d4c6b8ab3d33c1fbd6826b1b9010a8f09"
+                "reference": "804f628e1964b6143d15637834d4ca0a70ba1141"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/4442860d4c6b8ab3d33c1fbd6826b1b9010a8f09",
-                "reference": "4442860d4c6b8ab3d33c1fbd6826b1b9010a8f09",
+                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/804f628e1964b6143d15637834d4ca0a70ba1141",
+                "reference": "804f628e1964b6143d15637834d4ca0a70ba1141",
                 "shasum": ""
             },
             "require": {
                 "eftec/bladeone": "^4.13",
                 "php": ">=7.4"
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "files": [
@@ -344,7 +345,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-11-30T18:06:53+00:00"
+            "time": "2024-12-22T12:24:18+00:00"
         },
         {
             "name": "wpbones/wpkirk-helpers",
@@ -399,7 +400,9 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "wpbones/wpbones": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
