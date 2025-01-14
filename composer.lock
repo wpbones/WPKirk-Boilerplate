@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "eftec/bladeone",
-            "version": "4.16",
+            "version": "4.17.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/EFTEC/BladeOne.git",
-                "reference": "94570df4cd5e81a1efd0bb25d451bd715d529279"
+                "reference": "7f2bb41b7dfc8be16a83ea544ce0981c844f7ecc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/EFTEC/BladeOne/zipball/94570df4cd5e81a1efd0bb25d451bd715d529279",
-                "reference": "94570df4cd5e81a1efd0bb25d451bd715d529279",
+                "url": "https://api.github.com/repos/EFTEC/BladeOne/zipball/7f2bb41b7dfc8be16a83ea544ce0981c844f7ecc",
+                "reference": "7f2bb41b7dfc8be16a83ea544ce0981c844f7ecc",
                 "shasum": ""
             },
             "require": {
@@ -61,35 +61,35 @@
             ],
             "support": {
                 "issues": "https://github.com/EFTEC/BladeOne/issues",
-                "source": "https://github.com/EFTEC/BladeOne/tree/4.16"
+                "source": "https://github.com/EFTEC/BladeOne/tree/4.17.1"
             },
-            "time": "2024-10-11T17:41:08+00:00"
+            "time": "2024-12-30T17:31:52+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
-            "version": "v2.5.4",
+            "version": "v3.5.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/deprecation-contracts.git",
-                "reference": "605389f2a7e5625f273b53960dc46aeaf9c62918"
+                "reference": "74c71c939a79f7d5bf3c1ce9f5ea37ba0114c6f6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/605389f2a7e5625f273b53960dc46aeaf9c62918",
-                "reference": "605389f2a7e5625f273b53960dc46aeaf9c62918",
+                "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/74c71c939a79f7d5bf3c1ce9f5ea37ba0114c6f6",
+                "reference": "74c71c939a79f7d5bf3c1ce9f5ea37ba0114c6f6",
                 "shasum": ""
             },
             "require": {
-                "php": ">=7.1"
+                "php": ">=8.1"
             },
             "type": "library",
             "extra": {
-                "branch-alias": {
-                    "dev-main": "2.5-dev"
-                },
                 "thanks": {
-                    "name": "symfony/contracts",
-                    "url": "https://github.com/symfony/contracts"
+                    "url": "https://github.com/symfony/contracts",
+                    "name": "symfony/contracts"
+                },
+                "branch-alias": {
+                    "dev-main": "3.5-dev"
                 }
             },
             "autoload": {
@@ -114,7 +114,7 @@
             "description": "A generic function and convention to trigger deprecation notices",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/deprecation-contracts/tree/v2.5.4"
+                "source": "https://github.com/symfony/deprecation-contracts/tree/v3.5.1"
             },
             "funding": [
                 {
@@ -130,7 +130,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-09-25T14:11:13+00:00"
+            "time": "2024-09-25T14:20:29+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",
@@ -158,8 +158,8 @@
             "type": "library",
             "extra": {
                 "thanks": {
-                    "name": "symfony/polyfill",
-                    "url": "https://github.com/symfony/polyfill"
+                    "url": "https://github.com/symfony/polyfill",
+                    "name": "symfony/polyfill"
                 }
             },
             "autoload": {
@@ -292,12 +292,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/WPBones.git",
-                "reference": "804f628e1964b6143d15637834d4ca0a70ba1141"
+                "reference": "ed93ec9c2ef16f9cadf3fd7d6ae6a87332b09c75"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/804f628e1964b6143d15637834d4ca0a70ba1141",
-                "reference": "804f628e1964b6143d15637834d4ca0a70ba1141",
+                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/ed93ec9c2ef16f9cadf3fd7d6ae6a87332b09c75",
+                "reference": "ed93ec9c2ef16f9cadf3fd7d6ae6a87332b09c75",
                 "shasum": ""
             },
             "require": {
@@ -345,7 +345,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-12-22T12:24:18+00:00"
+            "time": "2025-01-14T10:32:45+00:00"
         },
         {
             "name": "wpbones/wpkirk-helpers",
