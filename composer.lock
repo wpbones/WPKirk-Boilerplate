@@ -134,7 +134,7 @@
         },
         {
             "name": "symfony/polyfill-ctype",
-            "version": "v1.31.0",
+            "version": "v1.32.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-ctype.git",
@@ -193,7 +193,7 @@
                 "portable"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.31.0"
+                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.32.0"
             },
             "funding": [
                 {
@@ -292,12 +292,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/WPBones.git",
-                "reference": "b4911f99b867d7dd309ba195e6a1a4d4fe1204b2"
+                "reference": "b99f416c2b14c3c2fdfe6137d987ade6fbb3dacd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/b4911f99b867d7dd309ba195e6a1a4d4fe1204b2",
-                "reference": "b4911f99b867d7dd309ba195e6a1a4d4fe1204b2",
+                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/b99f416c2b14c3c2fdfe6137d987ade6fbb3dacd",
+                "reference": "b99f416c2b14c3c2fdfe6137d987ade6fbb3dacd",
                 "shasum": ""
             },
             "require": {
@@ -345,7 +345,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-04-16T05:44:53+00:00"
+            "time": "2025-05-15T10:34:09+00:00"
         },
         {
             "name": "wpbones/wpkirk-helpers",

@@ -8,6 +8,24 @@ return [
 
   /*
   |--------------------------------------------------------------------------
+  | Plugin priorities
+  | @since 1.9.5
+  |--------------------------------------------------------------------------
+  |
+  | Here you may configure the priority of each hook your plugin uses.
+  | Defaults to 10 if you don’t override them.
+  |
+  */
+
+  'priorities' => [
+    'init'              => 10,
+    'widgets_init'      => 10,
+    'admin_init'        => 10,
+    'set_screen_option' => 10,
+  ],
+
+  /*
+  |--------------------------------------------------------------------------
   | Logging Configuration
   |--------------------------------------------------------------------------
   |
