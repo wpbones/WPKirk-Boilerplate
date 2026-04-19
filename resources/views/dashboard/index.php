@@ -30,7 +30,7 @@
 
     <?php wpkirk_section(__('ReactJS Application', 'wp-kirk')); ?>
 
-    <?php wpkirk_code("@/resources/assets/apps/app.jsx") ?>
+    <?php wpkirk_code("@/resources/assets/apps/app.tsx") ?>
 
     <?php wpkirk_code(
       htmlentities('<div id="react-app"></div>'),
