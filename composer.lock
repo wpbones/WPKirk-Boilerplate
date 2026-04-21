@@ -292,16 +292,16 @@
         },
         {
             "name": "wpbones/wpbones",
-            "version": "v2.0.0",
+            "version": "v2.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/WPBones.git",
-                "reference": "ac7455094c25d283c3311a37cdae70811cbf398c"
+                "reference": "f149adb24e84010e01320379073b671d29bfce6f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/ac7455094c25d283c3311a37cdae70811cbf398c",
-                "reference": "ac7455094c25d283c3311a37cdae70811cbf398c",
+                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/f149adb24e84010e01320379073b671d29bfce6f",
+                "reference": "f149adb24e84010e01320379073b671d29bfce6f",
                 "shasum": ""
             },
             "require": {
@@ -348,7 +348,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-04-19T16:12:06+00:00"
+            "time": "2026-04-21T11:50:51+00:00"
         },
         {
             "name": "wpbones/wpkirk-helpers",
