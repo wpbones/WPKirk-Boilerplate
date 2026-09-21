@@ -708,7 +708,7 @@ namespace Bones {
   define('WPBONES_MINIMAL_PHP_VERSION', '7.4');
 
   /* MARK: The WP Bones command line version. */
-  define('WPBONES_COMMAND_LINE_VERSION', '2.0.5');
+  define('WPBONES_COMMAND_LINE_VERSION', '2.0.6');
 
   use Bones\SemVer\Exceptions\InvalidVersionException;
   use Bones\SemVer\Version;
@@ -2000,13 +2000,22 @@ namespace Bones {
       // Check if there is '--no-build' in the arguments array.
       $no_build = in_array('--no-build', $argv, true);
 
+      // Check if there is '--keep-ignored' in the arguments array.
+      $keep_ignored = in_array('--keep-ignored', $argv, true);
+
       // Check if there is '--pkgm=<package-manager>' in the arguments array,
       // and get the <package-manager> name.
       $package_name = $this->getOptionValue($argv, '--pkgm=');
 
       // Filter the array to remove the '--wp', '--create-zip', '--no-build',
       // and '--pkgm=<package-manager>' arguments.
-      $filtered_args = $this->removeValues($argv, ['--wp', '--create-zip', '--no-build', '--pkgm=' . $package_name]);
+      $filtered_args = $this->removeValues($argv, [
+        '--wp',
+        '--create-zip',
+        '--no-build',
+        '--keep-ignored',
+        '--pkgm=' . $package_name,
+      ]);
 
       // Get the path from the filtered arguments array.
       $path = $filtered_args[0] ?? '';
@@ -2026,6 +2035,9 @@ namespace Bones {
           "  --pkgm=<package-manager>\tForces the deployment to use the specified package manager, Eg. npm, yarn, ...",
         );
         $this->info("  --no-build\t\t\tForces the deployment to skip the build process.");
+        $this->info(
+          "  --keep-ignored\t\tPackages files that git ignores as well (they are left out by default).",
+        );
         exit(0);
       }
 
@@ -2141,6 +2153,21 @@ namespace Bones {
        */
       $this->skipWhenDeploy = $this->apply_filters('wpbones_console_deploy_skip_folders', $this->skipWhenDeploy);
 
+      if (!$keep_ignored) {
+        $ignored = $this->gitIgnoredEntries();
+
+        if (!empty($ignored)) {
+          $this->skipWhenDeploy = array_merge($this->skipWhenDeploy, $ignored);
+          $this->info(
+            '🙈 Leaving out ' .
+              count($ignored) .
+              ' path(s) git ignores: ' .
+              implode(', ', array_map(fn($entry) => ltrim($entry, '/'), $ignored)),
+          );
+          $this->line('   Pass --keep-ignored to package them anyway.');
+        }
+      }
+
       $this->rootDeploy = __DIR__;
 
       $this->startProgress("Copying to 📁 {$path}");
@@ -2247,7 +2274,7 @@ namespace Bones {
 
         if (strtolower($answer) === 'y') {
           $this->startProgress("Build for production by using '{$packageManager} run build'");
-          shell_exec("{$packageManager} run build");
+          $this->runBuild($packageManager);
           $this->processCompleted("Build completed\n");
           $this->do_action('wpbones_console_deploy_after_build_assets', $this, $path);
         } else {
@@ -2256,7 +2283,7 @@ namespace Bones {
             $this->info('⏭︎ Skip build assets');
           } else {
             $this->startProgress("Build for production by using '{$answer} run build'");
-            shell_exec("{$answer} run build");
+            $this->runBuild($answer);
             $this->endProgress();
             $this->do_action('wpbones_console_deploy_after_build_assets', $this, $path);
           }
@@ -2264,6 +2291,43 @@ namespace Bones {
       } else {
         $this->warning('No package manager found. The build assets will be skipped');
       }
+    }
+
+    /**
+     * Run the production build and abort the deploy if it fails.
+     *
+     * This used to be a bare shell_exec(), which returns stdout and drops the exit
+     * status on the floor. A build that failed still printed "Build completed", the
+     * deploy went on to package whatever happened to be sitting in public/, and the
+     * command exited 0 — so a broken release looked exactly like a good one. Aborting
+     * is the right answer rather than warning: everything after this point copies the
+     * build output into the release package.
+     *
+     * @since 2.0.6
+     * @param string $packageManager The package manager used to run the build.
+     *
+     * @return void
+     */
+    protected function runBuild($packageManager)
+    {
+      $output = [];
+      $status = 0;
+
+      exec("{$packageManager} run build 2>&1", $output, $status);
+
+      if ($status === 0) {
+        return;
+      }
+
+      $this->error("\nBuild failed: '{$packageManager} run build' exited with status {$status}.");
+
+      foreach (array_slice($output, -20) as $line) {
+        $this->line('   ' . $line);
+      }
+
+      $this->error('Deploy aborted: the package would have shipped whatever was already in public/.');
+
+      exit(1);
     }
 
     /**
@@ -2324,6 +2388,69 @@ namespace Bones {
      *
      * @return bool
      */
+    /**
+     * Paths inside the plugin that git ignores, as deploy-relative entries.
+     *
+     * The deploy copies the plugin directory filtered only by a hardcoded list, so
+     * anything left lying around ships: a local POST.md went out to WordPress.org twice
+     * before anyone noticed, invisible to `git status` and absent from the deploy log.
+     *
+     * Three directories are never consulted, because the repository's ignore rules do
+     * not describe them. `vendor/` is gitignored in all fourteen boilerplates and partly
+     * gitignored in the released plugins, so honouring .gitignore literally would ship a
+     * plugin with no framework in it. `public/` holds what the build has just produced,
+     * and `storage/` is the runtime directory.
+     *
+     * Returns an empty list when the plugin is not itself a git repository, or when git
+     * is unavailable — nothing to consult, so nothing is filtered.
+     *
+     * @since 2.0.6
+     *
+     * @return array
+     */
+    protected function gitIgnoredEntries(): array
+    {
+      $root = escapeshellarg(__DIR__);
+      $topLevel = [];
+      $status = 0;
+
+      exec("git -C {$root} rev-parse --show-toplevel 2>/dev/null", $topLevel, $status);
+
+      // Only the plugin's own repository. A plugin sitting inside someone else's
+      // checkout must not inherit that repository's ignore rules.
+      if ($status !== 0 || realpath(trim($topLevel[0] ?? '')) !== realpath(__DIR__)) {
+        return [];
+      }
+
+      $lines = [];
+      $status = 0;
+
+      exec(
+        "git -C {$root} ls-files --others --ignored --exclude-standard --directory 2>/dev/null",
+        $lines,
+        $status,
+      );
+
+      if ($status !== 0) {
+        return [];
+      }
+
+      $keep = ['vendor', 'public', 'storage'];
+      $entries = [];
+
+      foreach ($lines as $line) {
+        $path = rtrim(trim($line), '/');
+
+        if ($path === '' || in_array(explode('/', $path)[0], $keep, true)) {
+          continue;
+        }
+
+        $entries[] = '/' . $path;
+      }
+
+      return array_values(array_unique($entries));
+    }
+
     protected function skip(string $value): bool
     {
       $single = str_replace($this->rootDeploy, '', $value);
@@ -2545,12 +2672,62 @@ namespace Bones {
 
         file_put_contents($mainPluginFilename, $new_index_php_content);
 
+        // The asset pipeline keeps its own copy of the version. Without these the
+        // command reported success while package.json silently drifted behind.
+        $this->updateJsonVersion('package.json', (string) $version, 1);
+        $this->updateJsonVersion('package-lock.json', (string) $version, 2);
+
         $this->processCompleted("Version updated to {$version}");
 
         return;
       }
 
       $this->warning("Version is already {$version}");
+    }
+
+    /**
+     * Update the plugin's own "version" entries in a JSON file, leaving the rest alone.
+     *
+     * package.json has one; a package-lock.json has two, `version` at the top and
+     * `packages[""].version`, and then one for every installed dependency. Everything
+     * from the first "node_modules/" key on is the dependency tree and must not move,
+     * so the replacement only ever looks at the text before it.
+     *
+     * The file is edited as text rather than decoded and re-encoded: npm writes two
+     * space indentation and PHP's JSON_PRETTY_PRINT writes four, so a round trip would
+     * rewrite every line of the file to change one number.
+     *
+     * @since 2.0.6
+     * @param string $filename The file to update, relative to the plugin root.
+     * @param string $version  The new version.
+     * @param int    $limit    How many entries to replace at most.
+     *
+     * @return void
+     */
+    protected function updateJsonVersion($filename, $version, $limit)
+    {
+      if (!file_exists($filename)) {
+        return;
+      }
+
+      $content = file_get_contents($filename);
+
+      $boundary = strpos($content, '"node_modules/');
+      $head = $boundary === false ? $content : substr($content, 0, $boundary);
+      $tail = $boundary === false ? '' : substr($content, $boundary);
+
+      $count = 0;
+      $head = preg_replace('/("version"\s*:\s*")[^"]*(")/', '${1}' . $version . '${2}', $head, $limit, $count);
+
+      if ($count === 0) {
+        $this->warning("→ {$filename} has no \"version\" entry, left as it is");
+
+        return;
+      }
+
+      file_put_contents($filename, $head . $tail);
+
+      $this->info("→ {$filename} > {$version} (" . $count . ($count === 1 ? ' entry)' : ' entries)'));
     }
 
     /**
