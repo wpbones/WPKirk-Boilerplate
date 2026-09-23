@@ -2,7 +2,7 @@
 Contributors: gfazioli
 Donate link: https://wpbones.com/
 Tags: template, wpbones
-Requires at least: 6.2
+Requires at least: 6.6
 Tested up to: 6.6
 Stable tag: 2.0.6
 License: GPLv2 or later
