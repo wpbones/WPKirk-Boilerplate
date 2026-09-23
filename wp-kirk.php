@@ -9,8 +9,8 @@
  * Requires PHP: 8.1
  * Author: Giovambattista Fazioli
  * Author URI: https://wpbones.com/
- * License: GPLv2 or later
- * License URI: http://www.gnu.org/licenses/gpl-2.0.html
+ * License: MIT
+ * License URI: https://opensource.org/licenses/MIT
  * Text Domain: wp-kirk
  * Domain Path: languages
  *
