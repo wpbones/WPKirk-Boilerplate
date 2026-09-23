@@ -28,7 +28,10 @@ return [
 
     // authentication
     'auth' => [
-        // embed basic authentication handler
-        'basic' => true
+        // Embedded HTTP Basic Auth handler. OFF by default: when on, the framework hooks
+        // `determine_current_user` for EVERY request, not only REST calls, and accepts a username
+        // and password in each request's headers (cleartext without HTTPS). Turn it on only for a
+        // plugin whose API really needs it; Application Passwords (core since 5.6) usually do.
+        'basic' => false
     ]
 ];
