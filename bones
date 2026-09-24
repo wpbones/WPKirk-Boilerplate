@@ -704,11 +704,11 @@ namespace Bones\Traits {
  */
 
 namespace Bones {
-  /* The minimum PHP version required to run Bones. */
-  define('WPBONES_MINIMAL_PHP_VERSION', '7.4');
+  /* The minimum PHP version required to run Bones: keep it equal to composer.json's "php". */
+  define('WPBONES_MINIMAL_PHP_VERSION', '8.1');
 
   /* MARK: The WP Bones command line version. */
-  define('WPBONES_COMMAND_LINE_VERSION', '2.0.8');
+  define('WPBONES_COMMAND_LINE_VERSION', '2.0.9');
 
   use Bones\SemVer\Exceptions\InvalidVersionException;
   use Bones\SemVer\Version;
@@ -2801,6 +2801,10 @@ namespace Bones {
      * from the first "node_modules/" key on is the dependency tree and must not move,
      * so the replacement only ever looks at the text before it.
      *
+     * A v1 lockfile (npm 6) has no "node_modules/" key and no `packages`: its tree
+     * sits under `dependencies`, so only the `version` at the top is the plugin's
+     * (#102).
+     *
      * The file is edited as text rather than decoded and re-encoded: npm writes two
      * space indentation and PHP's JSON_PRETTY_PRINT writes four, so a round trip would
      * rewrite every line of the file to change one number.
@@ -2819,6 +2823,10 @@ namespace Bones {
       }
 
       $content = file_get_contents($filename);
+
+      if (preg_match('/"lockfileVersion"\s*:\s*1\b/', $content)) {
+        $limit = 1;
+      }
 
       $boundary = strpos($content, '"node_modules/');
       $head = $boundary === false ? $content : substr($content, 0, $boundary);
