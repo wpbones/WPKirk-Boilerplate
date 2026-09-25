@@ -7,7 +7,7 @@
     "test": "wp-scripts test-unit-js",
     "test:watch": "wp-scripts test-unit-js --watch",
     "format": "wp-scripts format",
-    "format:check": "wp-scripts format --check",
+    "format:check": "prettier --check --ignore-path .prettierignore \"**/*.{js,jsx,json,ts,tsx,yml,yaml}\"",
     "lint": "wp-scripts lint-js resources/",
     "lint:style": "wp-scripts lint-style 'resources/**/*.{css,scss}'",
     "check-engines": "wp-scripts check-engines",
@@ -26,6 +26,7 @@
     "glob": "^11.0.0",
     "less": "^4.6.4",
     "less-loader": "^12.2.0",
+    "prettier": "npm:wp-prettier@3.0.3",
     "typescript": "^5.9.3",
     "webpack-remove-empty-scripts": "^1.1.0"
   }
