@@ -624,6 +624,9 @@ namespace Bones\Traits {
     // WordPress loaded flag
     protected $wpLoaded = false;
 
+    /* The plugin folder as the shell spells it, symlinks included: see BonesCommandLine. */
+    abstract protected function pluginPathAsTyped(): string;
+
     /* Protected version of the do_action function */
     protected function do_action(...$args)
     {
@@ -673,7 +676,7 @@ namespace Bones\Traits {
     {
       try {
         // We have to load the WordPress environment.
-        $currentDir = $_SERVER['PWD'] ?? __DIR__;
+        $currentDir = $this->pluginPathAsTyped();
         $wpLoadPath = dirname(dirname(dirname($currentDir))) . '/wp-load.php';
 
         if (!file_exists($wpLoadPath)) {
@@ -717,7 +720,7 @@ namespace Bones {
   define('WPBONES_MINIMAL_PHP_VERSION', '8.1');
 
   /* MARK: The WP Bones command line version. */
-  define('WPBONES_COMMAND_LINE_VERSION', '2.0.12');
+  define('WPBONES_COMMAND_LINE_VERSION', '2.1.0');
 
   use Bones\SemVer\Exceptions\InvalidVersionException;
   use Bones\SemVer\Version;
@@ -786,6 +789,20 @@ namespace Bones {
      */
     protected ?string $wpCliVersion = null;
 
+    /**
+     * The folder bones was run from, before it moved into the plugin.
+     *
+     * @since 2.1.0
+     */
+    protected string $invokedFrom = '';
+
+    /**
+     * The plugin folder as the shell spells it: see pluginPathAsTyped().
+     *
+     * @since 2.1.0
+     */
+    protected ?string $pluginPath = null;
+
     public function __construct()
     {
       $this->boot();
@@ -797,6 +814,20 @@ namespace Bones {
      */
     public function boot()
     {
+      // Up to 2.0.12 half of the paths were the shell's and half the plugin's, so run from
+      // anywhere but the plugin root bones could not read `namespace` and died on a TypeError.
+      // Every relative path now means the plugin; a path typed on the command line still means
+      // what the shell meant (pathFromCommandLine()).
+      $this->invokedFrom = getcwd() ?: __DIR__;
+      $plugin = $this->pluginPathAsTyped();
+      chdir(__DIR__);
+
+      // What a shell's `cd` into the plugin leaves behind. Command::loadWordPress(), which custom
+      // commands use, looks for WordPress and vendor/autoload.php through PWD, and so may anything
+      // bones runs.
+      $_SERVER['PWD'] = $plugin;
+      putenv("PWD={$plugin}");
+
       $arguments = $this->arguments();
 
       // Load the console kernel — skip for `rename`, which is the bootstrap
@@ -1072,6 +1103,75 @@ namespace Bones {
       }
 
       return $current;
+    }
+
+    /**
+     * A path typed on the command line, as the shell meant it.
+     *
+     * bones works from the plugin folder since 2.1.0, so a relative path typed somewhere else is
+     * anchored to the folder it was typed in. Typed from the plugin root it comes back as it was.
+     *
+     * @since 2.1.0
+     */
+    protected function pathFromCommandLine(string $path): string
+    {
+      if ($path === '' || $this->resolvePath($this->invokedFrom) === $this->resolvePath(__DIR__)) {
+        return $path;
+      }
+
+      // On Windows "\foo" is the root of the drive it was typed on.
+      if (PHP_OS_FAMILY === 'Windows' && preg_match('#^[\\\\/](?![\\\\/])#', $path)) {
+        return substr($this->invokedFrom, 0, 2) . $path;
+      }
+
+      if (preg_match('#^([A-Za-z]:)?[\\\\/]#', $path)) {
+        return $path;
+      }
+
+      return rtrim($this->invokedFrom, '\\/') . DIRECTORY_SEPARATOR . $path;
+    }
+
+    /**
+     * The plugin folder as the shell spells it, symlinks included.
+     *
+     * A plugin developed elsewhere and symlinked into wp-content/plugins reaches WordPress only
+     * through that spelling: __DIR__ is the physical folder. Up to 2.0.12 the shell's PWD stood
+     * for it, which is right only when bones is run from the plugin root.
+     *
+     * @since 2.1.0
+     */
+    protected function pluginPathAsTyped(): string
+    {
+      // Worked out once, in boot(), before PWD is made to name the plugin.
+      if ($this->pluginPath !== null) {
+        return $this->pluginPath;
+      }
+
+      $pwd = (string) ($_SERVER['PWD'] ?? getenv('PWD'));
+      $base = $pwd !== '' && realpath($pwd) === realpath($this->invokedFrom) ? $pwd : $this->invokedFrom;
+      $script = (string) ($_SERVER['argv'][0] ?? 'bones');
+      $folder = preg_match('#^([A-Za-z]:)?[\\\\/]#', $script)
+        ? dirname($script)
+        : $base . DIRECTORY_SEPARATOR . dirname($script);
+
+      // "." and ".." as written, without following links: following them is what realpath() does.
+      $segments = [];
+      foreach (preg_split('#[\\\\/]+#', $folder) as $index => $segment) {
+        if ($segment === '.' || ($segment === '' && $index > 0)) {
+          continue;
+        }
+
+        if ($segment === '..' && count($segments) > 1) {
+          array_pop($segments);
+          continue;
+        }
+
+        $segments[] = $segment;
+      }
+
+      $typed = implode(DIRECTORY_SEPARATOR, $segments);
+
+      return $this->pluginPath = $typed !== '' && realpath($typed) === realpath(__DIR__) ? $typed : __DIR__;
     }
 
     /**
@@ -1753,46 +1853,66 @@ namespace Bones {
     /**
      * Update the plugin name and namespace
      *
+     * Only files whose content changes are written, and files holding a NUL byte are left alone:
+     * up to 2.0.12 every file was rewritten, and a compiled .mo catalogue came out corrupted,
+     * because replacing "wp-kirk" with a longer id moves every string after it while the offset
+     * table stays where it was.
+     *
      * @param string $search_plugin_name The previous plugin name
      * @param string $search_namespace The previous namespace
      * @param string $plugin_name The new plugin name
      * @param string $namespace The new namespace
+     * @param bool   $vendorOnly Only vendor/, what Composer has just installed (`rename --update`). Since 2.1.0.
      */
-    protected function setPluginNameAndNamespace($search_plugin_name, $search_namespace, $plugin_name, $namespace)
-    {
+    protected function setPluginNameAndNamespace(
+      $search_plugin_name,
+      $search_namespace,
+      $plugin_name,
+      $namespace,
+      bool $vendorOnly = false
+    ) {
       $mainPluginFile = $this->getMainPluginFile($plugin_name);
       $currentMainPluginFile = $this->getMainPluginFile($search_plugin_name);
 
-      // check if "index.php" exists
-      if (file_exists('index.php') && !file_exists($currentMainPluginFile)) {
-        $this->info("The file '{$currentMainPluginFile}' doesn't exists. Maybe you are updating from a < 1.5 version.");
-        $currentMainPluginFile = 'index.php';
+      // `rename --update` renames what Composer installed, never the plugin's own files. Up to 2.0.12
+      // it went through the whole rename, and in a renamed plugin wp-kirk.php never exists, so an
+      // index.php in the root was taken for a pre-1.5 main file and moved over the real one.
+      if (!$vendorOnly) {
+        // check if "index.php" exists
+        if (file_exists('index.php') && !file_exists($currentMainPluginFile)) {
+          $this->info("The file '{$currentMainPluginFile}' doesn't exists. Maybe you are updating from a < 1.5 version.");
+          $currentMainPluginFile = 'index.php';
+        }
+
+        @rename($currentMainPluginFile, $mainPluginFile);
       }
 
-      @rename($currentMainPluginFile, $mainPluginFile);
+      $files = $this->filesToRename($vendorOnly ? ['vendor'] : null);
 
-      // start scan everything
-      $files = array_filter(
-        array_map(function ($e) {
-          // exclude node_modules and bones executable
-          if (
-            false !== strpos($e, 'node_modules') ||
-            false !== strpos($e, 'vendor/wpbones/wpbones/src/Console/bin/bones')
-          ) {
-            return false;
-          }
-
-          return $e;
-        }, $this->recursiveScan('*')),
-      );
-
-      // merge
-      $files = array_merge($files, [$mainPluginFile, 'composer.json', 'readme.txt']);
+      if (!$vendorOnly) {
+        $files = array_merge($files, [$mainPluginFile, 'composer.json', 'readme.txt']);
+      }
 
       // change namespace
       $this->startProgress('Processing files');
+      $changed = 0;
+      $seen = [];
       foreach ($files as $file) {
-        $content = file_get_contents($file);
+        $real = realpath($file);
+
+        // A file reached twice (a symlink, a root file listed again) must not be replaced twice.
+        if ($real === false || isset($seen[$real]) || !is_file($file)) {
+          continue;
+        }
+
+        $seen[$real] = true;
+        $original = file_get_contents($file);
+
+        if ($original === false || strpos($original, "\0") !== false) {
+          continue;
+        }
+
+        $content = $original;
 
         // change namespace
         $content = str_replace($search_namespace, $namespace, $content);
@@ -1811,37 +1931,50 @@ namespace Bones {
           $content = str_replace($search_plugin_name, $plugin_name, $content);
         }
 
-        file_put_contents($file, $content);
+        if ($content !== $original) {
+          file_put_contents($file, $content);
+          $changed++;
+        }
       }
       $this->endProgress();
+      $this->line(" {$changed} of " . count($seen) . ' files changed');
 
-      $folder = $this->getDomainPath();
+      if (!$vendorOnly) {
+        // Saved before the header is read: getDomainPath() finds the main file through it, and the
+        // old main file has just been renamed. Up to 2.0.12 the language files were renamed only by
+        // the `rename --update` that Composer runs afterwards, and never on `rename --reset`.
+        file_put_contents('namespace', "{$plugin_name},{$namespace}");
 
-      if (!empty($folder) && is_dir($folder)) {
-        foreach (glob($folder . '/*') as $file) {
+        // WordPress documents "Domain Path: /languages": with the slash it was looked for at the disk root.
+        $folder = ltrim((string) $this->getDomainPath(), '/\\');
+
+        if (!empty($folder) && is_dir($folder)) {
+          foreach (glob($folder . '/*') as $file) {
+            $newFile = str_replace($this->getPluginId($search_plugin_name), $this->getPluginId($plugin_name), $file);
+            rename($file, $newFile);
+          }
+        }
+
+        foreach (glob('resources/assets/js/*') as $file) {
+          $newFile = str_replace($this->getPluginId($search_plugin_name), $this->getPluginId($plugin_name), $file);
+          rename($file, $newFile);
+        }
+
+        foreach (glob('resources/assets/css/*') as $file) {
           $newFile = str_replace($this->getPluginId($search_plugin_name), $this->getPluginId($plugin_name), $file);
           rename($file, $newFile);
         }
       }
 
-      foreach (glob('resources/assets/js/*') as $file) {
-        $newFile = str_replace($this->getPluginId($search_plugin_name), $this->getPluginId($plugin_name), $file);
-        rename($file, $newFile);
-      }
-
-      foreach (glob('resources/assets/css/*') as $file) {
-        $newFile = str_replace($this->getPluginId($search_plugin_name), $this->getPluginId($plugin_name), $file);
-        rename($file, $newFile);
-      }
-
       // Change also the WP Bones plugin class
       $file = 'vendor/wpbones/wpbones/src/Foundation/Plugin.php';
-      $content = file_get_contents($file);
-      $content = str_replace($currentMainPluginFile, $mainPluginFile, $content);
-      file_put_contents($file, $content);
-
-      // save new plugin name and namespace
-      file_put_contents('namespace', "{$plugin_name},{$namespace}");
+      if (is_file($file)) {
+        $original = file_get_contents($file);
+        $content = str_replace($currentMainPluginFile, $mainPluginFile, $original);
+        if ($content !== $original) {
+          file_put_contents($file, $content);
+        }
+      }
 
       $this->processCompleted('Rename process completed!');
     }
@@ -1864,69 +1997,67 @@ namespace Bones {
     }
 
     /**
-     * Return an array with all matched files from root folder. This method release the follow filters:
+     * The files a rename reads: every file under the plugin's folders (or under $folders), without
+     * node_modules, dot entries and the bones source. Files in the plugin root are not included,
+     * as with the glob this replaces: the rename adds the three it changes by name.
      *
-     *     wpdk_rglob_find_dir( true, $file ) - when find a dir
-     *     wpdk_rglob_find_file( true, $file ) - when find a a file
-     *     wpdk_rglob_matched( $regexp_result, $file, $match ) - after preg_match() done
+     * Up to 2.0.12 this was recursiveScan(), which declared the function _rglob() inside a method, so
+     * a second call in one process was a "Cannot redeclare" fatal, and which followed a symlinked
+     * folder back into itself until the path was too long.
      *
-     * @brief get all matched files
-     * @param string $path Folder root
-     * @param string $match Optional. Regex to apply on file name. For example use '/^.*\.(php)$/i' to get only php
-     *                        file. Default is empty
+     * @since 2.1.0
+     * @param string[]|null $folders Folders relative to the plugin root; null for all of them.
      *
-     * @return array
-     * @since 1.0.0.b4
-     *
+     * @return string[] Paths relative to the plugin root.
      */
-    protected function recursiveScan(string $path, string $match = ''): array
+    protected function filesToRename(?array $folders = null): array
     {
-      /**
-       * Return an array with all matched files from root folder.
-       *
-       * @brief    get all matched files
-       * @note     Internal recursive use only
-       *
-       * @param string $path Folder root
-       * @param string $match Optional. Regex to apply on file name. For example use '/^.*\.(php)$/i' to get only php file
-       * @param array  &$result Optional. Result array. Empty form first call
-       *
-       * @return array
-       *
-       * @suppress PHP0405
-       */
-      function _rglob(string $path, string $match = '', array &$result = [])
-      {
-        $path = rtrim($path, '/\\') . '/';
+      $pending = [];
 
-        $files = glob($path . '*', GLOB_MARK);
-        if (false !== $files) {
-          foreach ($files as $file) {
-            if (is_dir($file)) {
-              $continue = true;
-              if ($continue) {
-                _rglob($file, $match, $result);
-              }
-            } elseif (!empty($match)) {
-              $regexp_result = [];
-              $error = preg_match($match, $file, $regexp_result);
-              if (0 !== $error || false !== $error) {
-                if (!empty($regexp_result)) {
-                  $result[] = $regexp_result[0];
-                }
-              }
-            } else {
-              $result[] = $file;
-            }
-          }
-
-          return $result;
+      foreach ($folders ?? (glob('*', GLOB_ONLYDIR) ?: []) as $folder) {
+        if ($folder !== 'node_modules' && is_dir($folder)) {
+          $pending[] = $folder;
         }
       }
 
-      $result = [];
+      $files = [];
+      $visited = [];
 
-      return _rglob($path, $match, $result);
+      while ($pending) {
+        $folder = array_pop($pending);
+        $real = realpath($folder);
+
+        if ($real === false || isset($visited[$real])) {
+          continue;
+        }
+
+        $visited[$real] = true;
+
+        foreach (scandir($folder) ?: [] as $entry) {
+          // glob('*') never matched dot entries: .git, .github, .DS_Store stay out.
+          if ($entry[0] === '.') {
+            continue;
+          }
+
+          $path = "{$folder}/{$entry}";
+
+          if (is_dir($path)) {
+            if ($entry !== 'node_modules') {
+              $pending[] = $path;
+            }
+
+            continue;
+          }
+
+          if ($path !== 'vendor/wpbones/wpbones/src/Console/bin/bones') {
+            $files[] = $path;
+          }
+        }
+      }
+
+      sort($files);
+
+      return $files;
     }
 
     /* Update the plugin name and namespace after a install new package */
@@ -1936,7 +2067,7 @@ namespace Bones {
       $plugin_name = $this->getPluginName();
       $namespace = $this->getNamespace();
       [$search_plugin_name, $search_namespace] = $this->getDefaultPluginNameAndNamespace();
-      $this->setPluginNameAndNamespace($search_plugin_name, $search_namespace, $plugin_name, $namespace);
+      $this->setPluginNameAndNamespace($search_plugin_name, $search_namespace, $plugin_name, $namespace, true);
     }
 
     /**
@@ -2203,20 +2334,33 @@ namespace Bones {
       }
     }
 
-    /* Execute composer update */
+    /**
+     * Update the framework: `composer update wpbones/wpbones --with-dependencies`.
+     *
+     * Up to 2.0.12 vendor/wpbones/wpbones was deleted first and a full `composer update` ran after:
+     * when Composer failed (no network, a conflict) the plugin was left with no framework at all.
+     * Composer replaces the package by itself, renamed files included: measured with Composer 2.10
+     * on a dist install and on a git clone carrying 82 files changed by the rename.
+     *
+     * @since 2.1.0 Only the framework and its dependencies, and nothing is deleted first.
+     */
     protected function update()
     {
       if ($this->isHelp()) {
-        $this->line("Will run the composer update. Useful if there is a new version of WP Bones\n");
+        $this->line("Will run composer update wpbones/wpbones --with-dependencies: the framework and the packages it needs.");
+        $this->line("To update every package, run composer update.\n");
         $this->info('Usage:');
         $this->line(' php bones update');
         exit();
       }
-      // delete the current vendor/wpbones/wpbones folder
-      $this->deleteDirectory('vendor/wpbones/wpbones');
 
-      // update composer module
-      exit($this->runShell('composer update'));
+      $status = $this->runShell('composer update wpbones/wpbones --with-dependencies');
+
+      if ($status !== 0) {
+        $this->error("composer update exited with status {$status}.");
+      }
+
+      exit($status);
     }
 
     /**
@@ -2318,6 +2462,8 @@ namespace Bones {
         $this->error('The path is empty!');
         exit(1);
       }
+
+      $path = $this->pathFromCommandLine($path);
 
       // Checked before anything is built: the folder the deploy is about to delete and refill.
       $this->assertSafeDeployDestination($is_create_zip ? $path . '-tmp' : $path, $force);
@@ -3527,14 +3673,27 @@ namespace Bones {
         return;
       }
 
+      $className = $this->validateClassName($this->askClassNameIfEmpty($className));
+
       // current plugin name
       [$pluginName] = $this->getPluginNameAndNamespace();
 
       $slug = $this->getPluginId();
 
-      $class = $this->generateClass($this->askClassNameIfEmpty($className), 'widget', 'plugin/Widgets', [
+      // Up to 2.0.12 every widget of a plugin got the id_base "{slug}-demo-widget" and the same name,
+      // so a second widget shared the first one's settings (WordPress keeps them in the option
+      // widget_{id_base}). Both now come from the class: Shop/RecentPosts is "{slug}-shop-recent-posts",
+      // "Recent Posts".
+      $words = '/(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/';
+      $segments = explode('/', $className);
+      $widgetId = strtolower(str_replace('_', '-', (string) preg_replace($words, '-', implode('-', $segments))));
+      $widgetName = trim(str_replace('_', ' ', (string) preg_replace($words, ' ', end($segments))));
+
+      $class = $this->generateClass($className, 'widget', 'plugin/Widgets', [
         '{PluginName}' => $pluginName,
         '{Slug}' => $slug,
+        '{WidgetId}' => $widgetId,
+        '{WidgetName}' => $widgetName,
       ]);
 
       // The views are named after the plugin, not the widget: a second widget finds them in place
@@ -3722,12 +3881,12 @@ namespace Bones {
      *  - Deletes gulpfile.js, package-lock.json and pnpm-lock.yaml so the
      *    developer can pick up a clean lockfile with their preferred PM
      *    (yarn.lock is left untouched if already present)
-     *  - Creates webpack.config.js, tsconfig.json, .prettierrc, jest.config.js
+     *  - Creates webpack.config.js, tsconfig.json, .prettierrc, .prettierignore, jest.config.js
      *  - Rewrites package.json scripts to the unified dev/build/test/format block
      *  - Drops gulp-* and npm-run-all devDependencies
      *  - Adds the v2 devDependency set (@wordpress/scripts 31+, typescript, glob,
      *    less/less-loader, webpack-remove-empty-scripts, @wordpress/jest-preset-default,
-     *    @types/react, @types/react-dom)
+     *    @types/react, @types/react-dom, prettier as wp-prettier)
      *
      * The migration does NOT touch resources/assets/ — the developer's code stays
      * as-is. The printed "Next steps" suggest install/build/test commands using
@@ -3742,7 +3901,7 @@ namespace Bones {
       $this->line('');
       $this->warning('This will modify your plugin build infrastructure:');
       $this->line(' • Delete gulpfile.js, package-lock.json and pnpm-lock.yaml (yarn.lock is kept)');
-      $this->line(' • Create webpack.config.js, tsconfig.json, .prettierrc, jest.config.js');
+      $this->line(' • Create webpack.config.js, tsconfig.json, .prettierrc, .prettierignore, jest.config.js');
       $this->line(' • Rewrite package.json scripts and devDependencies');
       $this->line('');
       $this->warning('Commit your current work first. The resources/assets/ folder is left untouched.');
@@ -3771,6 +3930,7 @@ namespace Bones {
         'webpack.config.js' => 'webpack-config',
         'tsconfig.json'     => 'tsconfig',
         '.prettierrc'       => 'prettierrc',
+        '.prettierignore'   => 'prettierignore',
         'jest.config.js'    => 'jest-config',
       ];
       foreach ($configs as $file => $stub) {
@@ -3796,7 +3956,10 @@ namespace Bones {
             'test'            => 'wp-scripts test-unit-js',
             'test:watch'      => 'wp-scripts test-unit-js --watch',
             'format'          => 'wp-scripts format',
-            'format:check'    => 'wp-scripts format --check',
+            // `wp-scripts format` drops --check and always writes (scripts/format.js, 31.8.0): up to
+            // 2.0.12 this "check" rewrote the files, the compiled bundles included, and exited 0.
+            // Same files, same ignore file, same Prettier, and nothing written.
+            'format:check'    => 'prettier --check --ignore-path .prettierignore "**/*.{js,jsx,json,ts,tsx,yml,yaml}"',
             'lint'            => 'wp-scripts lint-js resources/',
             'lint:style'      => "wp-scripts lint-style 'resources/**/*.{css,scss}'",
             'check-engines'   => 'wp-scripts check-engines',
@@ -3832,6 +3995,11 @@ namespace Bones {
             'glob'                             => '^11.0.0',
             'less'                             => '^4.6.4',
             'less-loader'                      => '^12.2.0',
+            // format:check runs `prettier` itself, and pnpm 12 links only the binaries of direct
+            // dependencies (measured: 12.6.0 answered "prettier: command not found", 10.34.5 did
+            // not). The alias is the one @wordpress/scripts 31 declares, and the one its `format`
+            // asks projects to install.
+            'prettier'                         => 'npm:wp-prettier@3.0.3',
             'typescript'                       => '^5.9.3',
             'webpack-remove-empty-scripts'     => '^1.1.0',
           ];
