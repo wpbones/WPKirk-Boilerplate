@@ -364,16 +364,16 @@
         },
         {
             "name": "wpbones/wpkirk-helpers",
-            "version": "2.0.12",
+            "version": "2.0.13",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/wpkirk-helpers.git",
-                "reference": "2ef8a99fefa41d56d209f48cdf0c1a80fdee79c8"
+                "reference": "b0d32a1b28f86e3c00392cbf4c76918f4e14a807"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/wpkirk-helpers/zipball/2ef8a99fefa41d56d209f48cdf0c1a80fdee79c8",
-                "reference": "2ef8a99fefa41d56d209f48cdf0c1a80fdee79c8",
+                "url": "https://api.github.com/repos/wpbones/wpkirk-helpers/zipball/b0d32a1b28f86e3c00392cbf4c76918f4e14a807",
+                "reference": "b0d32a1b28f86e3c00392cbf4c76918f4e14a807",
                 "shasum": ""
             },
             "require": {
@@ -407,9 +407,9 @@
             "support": {
                 "email": "wpbones.info@gmail.com",
                 "issues": "https://github.com/wpbones/wpkirk-helpers/issues",
-                "source": "https://github.com/wpbones/wpkirk-helpers/tree/2.0.12"
+                "source": "https://github.com/wpbones/wpkirk-helpers/tree/2.0.13"
             },
-            "time": "2024-11-27T13:13:20+00:00"
+            "time": "2026-09-25T06:36:53+00:00"
         }
     ],
     "packages-dev": [],
