@@ -4,7 +4,7 @@ Donate link: https://wpbones.com/
 Tags: template, wpbones
 Requires at least: 6.6
 Tested up to: 6.6
-Stable tag: 2.1.3
+Stable tag: 3.0.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 

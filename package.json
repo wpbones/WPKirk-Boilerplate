@@ -1,6 +1,6 @@
 {
   "name": "@wpbones/wpkirk",
-  "version": "2.1.3",
+  "version": "3.0.0",
   "scripts": {
     "dev": "wp-scripts start",
     "build": "wp-scripts build",

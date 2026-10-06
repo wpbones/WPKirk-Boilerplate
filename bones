@@ -720,7 +720,7 @@ namespace Bones {
   define('WPBONES_MINIMAL_PHP_VERSION', '8.1');
 
   /* MARK: The WP Bones command line version. */
-  define('WPBONES_COMMAND_LINE_VERSION', '2.1.3');
+  define('WPBONES_COMMAND_LINE_VERSION', '3.0.0');
 
   use Bones\SemVer\Exceptions\InvalidVersionException;
   use Bones\SemVer\Version;
@@ -865,6 +865,13 @@ namespace Bones {
           $this->loadWordPress();
         }
         $this->deploy($this->getCommandParams());
+      }
+      // migrate, migrate:status
+      elseif ($this->isCommand('migrate') || $this->isCommand('migrate:status')) {
+        if (!$this->isHelp()) {
+          $this->loadWordPress();
+        }
+        $this->isCommand('migrate') ? $this->migrate() : $this->migrateStatus();
       }
 
       // go ahead...and run the command need workpress
@@ -1702,8 +1709,11 @@ namespace Bones {
       $this->line(' update                  Update the Framework');
       $this->line(' version                 Update the Plugin version');
       $this->info('migrate');
+      $this->line(' migrate                 Run the migrations that have not run on this site');
       $this->line(' migrate:create          Create a new Migration');
+      $this->line(' migrate:status          List the migrations and whether each one ran');
       $this->line(' migrate:to-v2           Migrate gulp-based plugin to v2 webpack infrastructure');
+      $this->line(' migrate:to-v3           Convert a 2.x plugin to the breaking changes of WP Bones 3');
       $this->info('make');
       $this->line(' make:ajax               Create a new Ajax service provider class');
       $this->line(' make:api                Create a new API controller class');
@@ -1768,6 +1778,10 @@ namespace Bones {
       // migrate:to-v2
       elseif ($this->isCommand('migrate:to-v2')) {
         $this->migrateToV2();
+      }
+      // migrate:to-v3
+      elseif ($this->isCommand('migrate:to-v3')) {
+        $this->migrateToV3();
       }
       // -- make ---------------------------------------------
       //
@@ -3353,6 +3367,116 @@ namespace Bones {
     }
 
     /**
+     * Run the migrations that have not run on this site, the same way the plugin does by itself
+     * when its version changes. The way to run one added during development, before a version bump.
+     *
+     * @since 3.0.0
+     */
+    protected function migrate()
+    {
+      if ($this->isHelp()) {
+        $this->info('Use php bones migrate');
+        $this->line('Runs the migrations in database/migrations/ that have not run on this site, in file name order.');
+
+        return;
+      }
+
+      $result = $this->migratingPlugin()->runMigrations();
+
+      if ($result->locked) {
+        $this->error('Another request is running the migrations right now: try again in a moment.');
+        exit(1);
+      }
+
+      foreach ($result->ran as $name) {
+        $this->line(" ✓ {$name}");
+      }
+
+      foreach ($result->outOfOrder as $name) {
+        $this->warning("{$name} ran after migrations whose names sort later: check that it does not depend on them.");
+      }
+
+      if ($result->failed !== null) {
+        $this->error("✗ {$result->failed}: {$result->error}");
+        $this->line('The migrations after it did not run. Fix it and run php bones migrate again.');
+        exit(1);
+      }
+
+      if ($result->ran === []) {
+        // An active plugin runs them itself while WordPress loads, when its version changed.
+        $this->info('Nothing to migrate. php bones migrate:status lists what ran.');
+
+        return;
+      }
+
+      $this->success(sprintf('%d migration%s ran.', count($result->ran), count($result->ran) === 1 ? '' : 's'));
+    }
+
+    /**
+     * List the migrations, and for each one whether it ran on this site.
+     *
+     * @since 3.0.0
+     */
+    protected function migrateStatus()
+    {
+      if ($this->isHelp()) {
+        $this->info('Use php bones migrate:status');
+
+        return;
+      }
+
+      $migrator = $this->migratingPlugin()->migrator();
+      $status = $migrator->status();
+
+      if ($status === []) {
+        $this->info('No migrations in database/migrations/.');
+      }
+
+      foreach ($status as $name => $state) {
+        if ($state['ran']) {
+          $this->line(" ✓ {$name}  (batch {$state['batch']}, version {$state['version']})");
+        } elseif ($state['outOfOrder']) {
+          $this->warning(" · {$name}  (pending, and it sorts before a migration that already ran)");
+        } else {
+          $this->line(" · {$name}  (pending)");
+        }
+      }
+
+      $failure = $migrator->failure();
+
+      if ($failure !== null) {
+        $this->error("The last run stopped at {$failure['migration']}: {$failure['message']}");
+      }
+
+      if (glob('database/seeders/*.php')) {
+        $this->warning('database/seeders/ does not run since WP Bones 3.0: php bones migrate:to-v3 turns the seeders into migrations.');
+      }
+    }
+
+    /**
+     * The plugin, booted inside the WordPress the migrations will write to.
+     *
+     * @since 3.0.0
+     */
+    protected function migratingPlugin()
+    {
+      if (!$this->wpLoaded) {
+        $this->error('No WordPress found above this plugin: the migrations need its database.');
+        exit(1);
+      }
+
+      $class = $this->getNamespace() . '\\WPBones\\Foundation\\Plugin';
+      $plugin = class_exists($class) ? $class::getInstance() : null;
+
+      if (!$plugin || !method_exists($plugin, 'migrator')) {
+        $this->error('This plugin runs a WP Bones older than 3.0, which has no migrator: run php bones update.');
+        exit(1);
+      }
+
+      return $plugin;
+    }
+
+    /**
      * Create a migrate file
      *
      * @param string|null $tablename
@@ -3871,6 +3995,888 @@ namespace Bones {
       $this->line(" 2. Enqueue it from your controller:");
       $this->line("    ->withAdminAppsScript('{$appName}')");
       $this->line(" 3. Run {$devCmd} — webpack auto-discovers the new entry.");
+    }
+
+    /**
+     * Convert a 2.x plugin to the breaking changes of WP Bones 3.0. Run it after
+     * `composer update wpbones/wpbones` has brought 3.0 in; running it again changes nothing.
+     *
+     * Migrations (wpbones/WPBones#40): each file in database/migrations/ now runs once per site,
+     * so the files move to the new base class name; each seeder in database/seeders/ becomes a
+     * migration, because seeders do not run any more. A seeder with $runOnce only seeds an empty
+     * table, as it did.
+     *
+     * @since 3.0.0
+     */
+    protected function migrateToV3(): void
+    {
+      if ($this->isHelp()) {
+        $this->info('Use php bones migrate:to-v3');
+
+        return;
+      }
+
+      $this->info('WP Bones — migrate to v3');
+      $this->line('');
+      $this->warning('This will rewrite your database folder:');
+      $this->line(' • database/migrations/*.php move to the 3.0 base class, WPBones\Database\Migration');
+      $this->line(' • every database/seeders/*.php becomes a migration, and the seeder file is deleted');
+      $this->line(' • it lists the pages, menus and REST routes that 3.0 gives to administrators only, the POST forms');
+      $this->line('   without $plugin->csrfField(), and the Ajax providers without a nonce (nothing is rewritten)');
+      $this->line('');
+      $this->warning('Commit your current work first, so that git diff shows what changed.');
+      $this->line('');
+
+      // A deployed copy has no namespace file: the conversion belongs in the plugin's sources.
+      if (!file_exists('namespace')) {
+        $this->error('No namespace file here: run php bones migrate:to-v3 in the plugin\'s source folder, not in a deployed copy.');
+        exit(1);
+      }
+
+      $answer = $this->ask('Continue? (y/N)');
+      if (strtolower(trim((string) $answer)) !== 'y') {
+        $this->error('Migration aborted: nothing was changed.');
+        exit(1);
+      }
+
+      // An editor may have left a new line at the end of the namespace file.
+      $namespace = trim($this->getNamespace());
+      $old = "{$namespace}\\WPBones\\Database\\Migrations\\Migration";
+      $new = "{$namespace}\\WPBones\\Database\\Migration";
+      $changed = 0;
+      $review = [];
+
+      // 1. Migrations: the base class.
+      foreach (glob('database/migrations/*.php') ?: [] as $file) {
+        $code = (string) file_get_contents($file);
+        $rewritten = str_replace(["use {$old};", "\\{$old}"], ["use {$new};", "\\{$new}"], $code);
+
+        if ($rewritten !== $code) {
+          if (file_put_contents($file, $rewritten) === false) {
+            $review[] = "{$file}: could not be written, still on the 2.x base class";
+            $this->warning(" Could not write {$file}");
+            continue;
+          }
+
+          $this->line(" Updated {$file}");
+          $changed++;
+        }
+      }
+
+      // 2. Seeders: each becomes a migration that sorts after every migration there is, as 2.x ran
+      // them after all of them, in the order they ran (glob order), one second apart. After today,
+      // or after the latest migration when its name carries a later timestamp.
+      $time = time();
+      $latest = basename((string) max(glob('database/migrations/*.php') ?: ['']), '.php');
+
+      if (preg_match('/^(\d{4})_(\d{2})_(\d{2})_(\d{2})(\d{2})(\d{2})/', $latest, $stamp)) {
+        $time = max($time, (int) mktime((int) $stamp[4], (int) $stamp[5], (int) $stamp[6], (int) $stamp[2], (int) $stamp[3], (int) $stamp[1]) + 1);
+      }
+
+      foreach (glob('database/seeders/*.php') ?: [] as $file) {
+        [$code, $notes] = $this->seederToMigration($file, $namespace);
+
+        if ($code === null) {
+          $review[] = "{$file}: {$notes[0]}";
+          $this->warning(" Kept {$file}: {$notes[0]}");
+          continue;
+        }
+
+        // BookSeeder → book_seeder: the name says where it came from.
+        $name = strtolower((string) preg_replace('/(?<=[a-z0-9])[A-Z]|(?<=[A-Z])[A-Z](?=[a-z])/', '_$0', basename($file, '.php')));
+        $target = sprintf('database/migrations/%s_%s.php', date('Y_m_d_His', $time++), $name);
+
+        if (!is_dir('database/migrations')) {
+          mkdir('database/migrations', 0755, true);
+        }
+
+        if ($latest !== '' && strcmp(basename($target, '.php'), $latest) <= 0) {
+          $review[] = "{$target}: it sorts before {$latest}, which 2.x ran first: rename it so that it comes after";
+        }
+
+        // The seeder goes only once its migration is on disk and parses: nothing is lost.
+        if (file_put_contents($target, $code) === false) {
+          $review[] = "{$file}: kept, {$target} could not be written";
+          $this->warning(" Kept {$file}: could not write {$target}");
+          continue;
+        }
+
+        exec(escapeshellarg(PHP_BINARY) . ' -l ' . escapeshellarg($target) . ' 2>&1', $lint, $status);
+
+        if ($status !== 0) {
+          unlink($target);
+          $review[] = "{$file}: kept, the migration made from it did not parse (" . trim(implode(' ', $lint)) . '): convert it by hand';
+          $this->warning(" Kept {$file}: the migration made from it did not parse");
+          continue;
+        }
+
+        unlink($file);
+        $this->line(" Converted {$file} into {$target}");
+        $changed++;
+
+        foreach ($notes as $note) {
+          $review[] = "{$target}: {$note}";
+        }
+      }
+
+      if (is_dir('database/seeders') && (glob('database/seeders/*') ?: []) === []) {
+        rmdir('database/seeders');
+      }
+
+      // 3. Who may open what: listed, never rewritten.
+      $review = array_merge($review, $this->accessChangesInV3());
+
+      $this->line('');
+
+      if ($changed === 0 && $review === []) {
+        $this->success('Nothing to change: this plugin is already on the 3.0 layout.');
+
+        return;
+      }
+
+      $this->success('Migration to v3 complete.');
+
+      if ($review !== []) {
+        $this->line('');
+        $this->warning('Review manually:');
+        foreach ($review as $line) {
+          $this->line(" • {$line}");
+        }
+      }
+
+      $this->line('');
+      $this->info('Next steps:');
+      $this->line(' 1. git diff, and php -l on the new files');
+      $this->line(' 2. php bones migrate:status on a site that runs the plugin');
+    }
+
+    /**
+     * The pages, menus and REST routes that declare nothing, which 2.x opened to every logged-in user
+     * (or, for a REST route, to everyone) and 3.0 gives to administrators only: one line each. Read
+     * from the tokens, not by including the files, which need WordPress.
+     *
+     * @since 3.0.0
+     */
+    protected function accessChangesInV3(): array
+    {
+      $lines = [];
+      $read = "'read' keeps it open to every logged-in user";
+
+      foreach (['routes' => 'page', 'menus' => 'menu'] as $config => $what) {
+        $file = "config/{$config}.php";
+
+        if (!is_file($file)) {
+          continue;
+        }
+
+        $entries = $this->configEntries((string) file_get_contents($file));
+
+        if ($entries === null) {
+          $lines[] = "{$file} does not return a literal array, so it was not read: since 3.0 a {$what} without a capability needs manage_options ({$read}), check them by hand";
+          continue;
+        }
+
+        foreach ($entries as $key => $keys) {
+          if (!in_array('capability', $keys, true)) {
+            $lines[] = "{$file}: the {$what} {$key} declares no capability, so since 3.0 it needs manage_options ({$read})"
+              . ($what === 'menu' ? '; declare it on the menu itself: with read on an item only, a subscriber sees the menu and cannot open its first page' : '');
+          }
+        }
+      }
+
+      foreach (glob('pages/*.php') ?: [] as $file) {
+        if (!$this->declaresPageCapability((string) file_get_contents($file))) {
+          $lines[] = "{$file} declares no capability() (public, without required arguments), so since 3.0 it needs manage_options (returning {$read}; ignore this line if it inherits one)";
+        }
+      }
+
+      // RestProvider loads the routes from api.custom.path, /api by default.
+      $api = 'api';
+
+      if (is_file('config/api.php')) {
+        $path = $this->customApiPath((string) file_get_contents('config/api.php'));
+
+        if ($path === false) {
+          $lines[] = "config/api.php: the REST route folder is not a literal path, so only api/ was read: check the routes elsewhere by hand";
+        } elseif ($path !== null) {
+          $api = trim($path, '/') ?: 'api';
+        }
+      }
+
+      if (is_dir($api)) {
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($api, \FilesystemIterator::SKIP_DOTS));
+
+        foreach ($files as $entry) {
+          if ($entry->getExtension() !== 'php') {
+            continue;
+          }
+
+          $file = str_replace(DIRECTORY_SEPARATOR, '/', $entry->getPathname());
+
+          foreach ($this->routesWithoutPermission((string) file_get_contents($entry->getPathname())) as [$line, $call, $literal]) {
+            $lines[] = $literal
+              ? "{$file}:{$line}: {$call} has no permission_callback, so since 3.0 it refuses every request ('permission_callback' => '__return_true' keeps it public)"
+              : "{$file}:{$line}: {$call} passes options that are not a literal array: since 3.0 a route without a permission_callback refuses every request, check it by hand";
+          }
+        }
+      }
+
+      // Since 3.0 a request to an admin page that is not a GET carries the plugin's nonce: each POST
+      // form, in the views and in the pages/ classes that print their own, holds csrfField().
+      foreach (['resources/views', 'pages'] as $folder) {
+        if (!is_dir($folder)) {
+          continue;
+        }
+
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($folder, \FilesystemIterator::SKIP_DOTS));
+
+        foreach ($files as $entry) {
+          if ($entry->getExtension() !== 'php') {
+            continue;
+          }
+
+          $code = (string) file_get_contents($entry->getPathname());
+          $file = str_replace(DIRECTORY_SEPARATOR, '/', $entry->getPathname());
+
+          // A pages/ class that opts out (a public csrf() returning false) is not guarded.
+          if ($folder === 'pages' && preg_match('/\bfunction\s+csrf\s*\(\s*\)[^{]*\{\s*return\s+false\s*;/i', $code)) {
+            continue;
+          }
+
+          foreach ($this->postForms($code, $folder === 'pages') as $at) {
+            // The form's own markup: up to its </form>, or the end of the file.
+            $close = stripos($code, '</form', $at);
+            $body = substr($code, $at, $close === false ? null : $close - $at);
+
+            if (strpos($body, 'csrfField(') !== false) {
+              continue;
+            }
+
+            $line = substr_count(substr($code, 0, $at), "\n") + 1;
+            $lines[] = "{$file}:{$line}: a POST form without \$plugin->csrfField(): since 3.0 the page refuses the request (a page that checks a nonce of its own may say 'csrf' => false)";
+          }
+        }
+      }
+
+      // Since 3.0 a logged Ajax action needs a nonce to check, and useHTTPPost() unslashes.
+      if (is_dir('plugin')) {
+        $classes = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator('plugin', \FilesystemIterator::SKIP_DOTS));
+
+        foreach ($classes as $entry) {
+          if ($entry->getExtension() !== 'php') {
+            continue;
+          }
+
+          $code = (string) file_get_contents($entry->getPathname());
+          $file = str_replace(DIRECTORY_SEPARATOR, '/', $entry->getPathname());
+
+          // Only a direct child of the framework's provider, under its name or the one a use
+          // statement gives it: one of the plugin's own base classes may set $nonceHash for all its
+          // children, which a file alone cannot show.
+          $names = ['WordPressAjaxServiceProvider'];
+
+          if (preg_match_all('/\buse\s+[\w\\\\]*\\\\WordPressAjaxServiceProvider\s+as\s+(\w+)\s*;/i', $code, $aliases)) {
+            $names = array_merge($names, $aliases[1]);
+          }
+
+          $direct = (bool) preg_match('/\bextends\s+\\\\?(?:[\w\\\\]+\\\\)?(?:' . implode('|', array_map('preg_quote', $names)) . ')\b/', $code);
+
+          if ($direct
+            && preg_match('/\$logged\s*=\s*(?:\[|array\s*\()\s*[\'"]/i', $code)
+            && !preg_match('/\$nonceHash\s*=\s*[\'"][^\'"]+[\'"]/', $code)) {
+            $lines[] = "{$file} has logged Ajax actions and no \$nonceHash: since 3.0 they refuse every request until it sets one and its requests send the nonce";
+          }
+
+          if (strpos($code, 'useHTTPPost(') !== false && preg_match_all('/\b(?:stripslashes|wp_unslash)\s*\(/', $code, $calls, PREG_OFFSET_CAPTURE)) {
+            foreach ($calls[0] as [, $at]) {
+              $line = substr_count(substr($code, 0, $at), "\n") + 1;
+              $lines[] = "{$file}:{$line}: unslashes what useHTTPPost() returns? Since 3.0 it comes unslashed: a second pass corrupts quotes and backslashes";
+            }
+          }
+        }
+      }
+
+      return $lines;
+    }
+
+    /**
+     * The offsets of the POST forms a file renders. In a view only its HTML counts: a form inside a
+     * PHP string there is an example printed as text (htmlentities()), not one a browser submits.
+     * A pages/ class renders the strings it returns, so there they count too.
+     */
+    protected function postForms(string $code, bool $inStrings): array
+    {
+      // Where the markup is: a view's HTML, and a pages/ class's strings.
+      $kinds = $inStrings ? [T_INLINE_HTML, T_CONSTANT_ENCAPSED_STRING, T_ENCAPSED_AND_WHITESPACE] : [T_INLINE_HTML];
+      $ranges = [];
+      $offset = 0;
+
+      foreach (token_get_all($code) as $token) {
+        $text = is_array($token) ? $token[1] : $token;
+
+        if (is_array($token) && in_array($token[0], $kinds, true)) {
+          $ranges[] = [$offset, $offset + strlen($text)];
+        }
+
+        $offset += strlen($text);
+      }
+
+      // A tag may hold PHP of its own, an echo in its action: the > that closes the PHP does not
+      // close the tag. (Not quoted here: a PHP close tag ends a // comment.)
+      preg_match_all('/<form\b(?:<\?(?:php|=).*?\?>|[^>])*>/is', $code, $forms, PREG_OFFSET_CAPTURE);
+
+      $found = [];
+
+      foreach ($forms[0] as [$tag, $at]) {
+        $inMarkup = false;
+
+        foreach ($ranges as [$from, $to]) {
+          if ($at >= $from && $at < $to) {
+            $inMarkup = true;
+            break;
+          }
+        }
+
+        if ($inMarkup && preg_match('/\bmethod\s*=\s*\\\\?["\']?post\b/i', $tag)) {
+          $found[] = $at;
+        }
+      }
+
+      return $found;
+    }
+
+    /**
+     * The entries of the array a config file returns, each with the string keys it holds itself (not
+     * those of the arrays inside it): ['my_page' => ['title', 'capability', 'route']]. A `capability`
+     * of null or '' is left out, as the providers fall back to the default for it.
+     *
+     * Null when the file cannot be read this way: it returns something else than a literal array (a
+     * variable, a call), it has more than one top-level return, or an entry's key is not a literal
+     * string (a constant, an interpolation).
+     */
+    protected function configEntries(string $code): ?array
+    {
+      $tokens = $this->codeTokens($code);
+      $count = count($tokens);
+
+      // The file's own return: not one inside a block, such as an ABSPATH guard's.
+      $returns = [];
+      $braces = 0;
+
+      foreach ($tokens as $i => $token) {
+        if ($token === '{' || (is_array($token) && in_array($token[0], [T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES], true))) {
+          $braces++;
+        } elseif ($token === '}') {
+          $braces--;
+        } elseif ($braces === 0 && is_array($token) && $token[0] === T_RETURN) {
+          $returns[] = $i;
+        }
+      }
+
+      if (count($returns) !== 1) {
+        return null;
+      }
+
+      $i = $returns[0];
+      $first = $tokens[$i + 1] ?? null;
+
+      if (!($first === '[' || (is_array($first) && $first[0] === T_ARRAY))) {
+        return null;
+      }
+
+      $entries = [];
+      $current = null;
+      $depth = 0;
+
+      for ($i++; $i < $count; $i++) {
+        $token = $tokens[$i];
+        $text = is_array($token) ? $token[1] : $token;
+
+        if (in_array($text, ['[', '(', '{'], true) || (is_array($token) && in_array($token[0], [T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES, T_ATTRIBUTE], true))) {
+          $depth++;
+          continue;
+        }
+
+        if (in_array($text, [']', ')', '}'], true)) {
+          if (--$depth === 0) {
+            break;
+          }
+          continue;
+        }
+
+        if ($text === ';' && $depth === 0) {
+          break;
+        }
+
+        // An entry's key that is not a literal string cannot be named, nor its keys told apart.
+        if ($depth === 1 && is_array($token) && $token[0] === T_DOUBLE_ARROW) {
+          $before = $tokens[$i - 1];
+
+          if (!(is_array($before) && $before[0] === T_CONSTANT_ENCAPSED_STRING)) {
+            return null;
+          }
+        }
+
+        $isKey = is_array($token) && $token[0] === T_CONSTANT_ENCAPSED_STRING
+          && is_array($tokens[$i + 1] ?? null) && $tokens[$i + 1][0] === T_DOUBLE_ARROW;
+
+        if (!$isKey) {
+          continue;
+        }
+
+        $key = substr($token[1], 1, -1);
+
+        if ($depth === 1) {
+          $current = $key;
+          $entries[$key] = [];
+        } elseif ($depth === 2 && $current !== null) {
+          if ($key === 'capability' && $this->isEmptyValue($tokens, $i + 2)) {
+            continue;
+          }
+
+          $entries[$current][] = $key;
+        }
+      }
+
+      return $entries;
+    }
+
+    /**
+     * Whether the value starting at $at is a bare null or an empty string, followed by the end of its
+     * element.
+     */
+    protected function isEmptyValue(array $tokens, int $at): bool
+    {
+      $value = $tokens[$at] ?? null;
+      $after = $tokens[$at + 1] ?? null;
+
+      if (!in_array($after, [',', ']', ')'], true) || !is_array($value)) {
+        return false;
+      }
+
+      return ($value[0] === T_STRING && strtolower($value[1]) === 'null')
+        || ($value[0] === T_CONSTANT_ENCAPSED_STRING && strlen($value[1]) === 2);
+    }
+
+    /**
+     * Whether a pages/ class declares a capability() that the provider calls: public, by its own
+     * name, and callable without arguments. One it inherits cannot be seen from here.
+     */
+    protected function declaresPageCapability(string $code): bool
+    {
+      $tokens = $this->codeTokens($code);
+      $count = count($tokens);
+
+      foreach ($tokens as $i => $token) {
+        if (!is_array($token) || $token[0] !== T_FUNCTION) {
+          continue;
+        }
+
+        $at = ($tokens[$i + 1] ?? null) === '&' ? $i + 2 : $i + 1;
+        $name = $tokens[$at] ?? null;
+
+        if (!is_array($name) || strcasecmp($name[1], 'capability') !== 0 || ($tokens[$at + 1] ?? null) !== '(') {
+          continue;
+        }
+
+        for ($k = $i - 1; $k >= 0 && is_array($tokens[$k]) && in_array($tokens[$k][0], [T_PUBLIC, T_PROTECTED, T_PRIVATE, T_STATIC, T_FINAL, T_ABSTRACT], true); $k--) {
+          if (in_array($tokens[$k][0], [T_PROTECTED, T_PRIVATE], true)) {
+            return false;
+          }
+        }
+
+        // Count the parameters without a default value.
+        $required = 0;
+        $depth = 0;
+        $param = $default = $variadic = false;
+
+        for ($j = $at + 2; $j < $count; $j++) {
+          $text = is_array($tokens[$j]) ? $tokens[$j][1] : $tokens[$j];
+
+          if ($depth === 0 && ($text === ')' || $text === ',')) {
+            $required += $param && !$default && !$variadic ? 1 : 0;
+            $param = $default = $variadic = false;
+
+            if ($text === ')') {
+              break;
+            }
+            continue;
+          }
+
+          if (in_array($text, ['(', '['], true)) {
+            $depth++;
+          } elseif (in_array($text, [')', ']'], true)) {
+            $depth--;
+          } elseif ($depth === 0 && $text === '=') {
+            $default = true;
+          } elseif ($depth === 0 && is_array($tokens[$j]) && $tokens[$j][0] === T_ELLIPSIS) {
+            $variadic = true;
+          } elseif ($depth === 0 && is_array($tokens[$j]) && $tokens[$j][0] === T_VARIABLE) {
+            $param = true;
+          }
+        }
+
+        return $required === 0;
+      }
+
+      return false;
+    }
+
+    /**
+     * The custom.path of config/api.php: the string when it is one whole literal, false when it is
+     * something else (a concatenation, a constant), null when there is none.
+     *
+     * @return string|false|null
+     */
+    protected function customApiPath(string $code)
+    {
+      $tokens = $this->codeTokens($code);
+      $count = count($tokens);
+      $depth = 0;
+      $inCustom = false;
+
+      for ($i = 0; $i < $count; $i++) {
+        $text = is_array($tokens[$i]) ? $tokens[$i][1] : $tokens[$i];
+
+        if ($text === '[' || $text === '(') {
+          $depth++;
+          continue;
+        }
+
+        if ($text === ']' || $text === ')') {
+          $depth--;
+          if ($inCustom && $depth < 2) {
+            $inCustom = false;
+          }
+          continue;
+        }
+
+        $isKey = is_array($tokens[$i]) && $tokens[$i][0] === T_CONSTANT_ENCAPSED_STRING
+          && is_array($tokens[$i + 1] ?? null) && $tokens[$i + 1][0] === T_DOUBLE_ARROW;
+
+        if (!$isKey) {
+          continue;
+        }
+
+        $key = substr($tokens[$i][1], 1, -1);
+
+        if ($depth === 1 && $key === 'custom') {
+          $inCustom = true;
+        } elseif ($inCustom && $depth === 2 && $key === 'path') {
+          $value = $tokens[$i + 2] ?? null;
+          $after = $tokens[$i + 3] ?? null;
+          $literal = is_array($value) && $value[0] === T_CONSTANT_ENCAPSED_STRING && in_array($after, [',', ']', ')'], true);
+
+          return $literal ? stripslashes(substr($value[1], 1, -1)) : false;
+        }
+      }
+
+      return null;
+    }
+
+    /**
+     * The Route:: calls in an API route file that pass no permission_callback, as [line, call,
+     * literal]: literal is false when the options are not a literal array, which cannot be read. Only a
+     * key of the options counts, not the string anywhere in the call, and a null value is no callback.
+     * The class may be imported under another name (`use …\Route as Api`), in any case; a call nested
+     * in another's arguments is read too.
+     */
+    protected function routesWithoutPermission(string $code): array
+    {
+      $tokens = $this->codeTokens($code);
+      $count = count($tokens);
+      $found = [];
+
+      // The names Route goes by in this file: its own, and the aliases a use statement gives it.
+      $names = ['route'];
+
+      foreach ($tokens as $i => $token) {
+        if (is_array($token) && $token[0] === T_AS
+          && is_array($tokens[$i - 1] ?? null) && preg_match('/(^|\\\\)Route$/i', $tokens[$i - 1][1])
+          && is_array($tokens[$i + 1] ?? null) && $tokens[$i + 1][0] === T_STRING) {
+          $names[] = strtolower($tokens[$i + 1][1]);
+        }
+      }
+
+      for ($i = 0; $i + 3 < $count; $i++) {
+        $class = is_array($tokens[$i]) && in_array($tokens[$i][0], [T_STRING, T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED], true)
+          ? strtolower(ltrim(strrchr('\\' . $tokens[$i][1], '\\'), '\\'))
+          : null;
+
+        $isCall = $class !== null && in_array($class, $names, true)
+          && is_array($tokens[$i + 1]) && $tokens[$i + 1][0] === T_DOUBLE_COLON
+          && is_array($tokens[$i + 2]) && in_array(strtolower($tokens[$i + 2][1]), ['get', 'post', 'put', 'patch', 'delete', 'request'], true)
+          && $tokens[$i + 3] === '(';
+
+        if (!$isCall) {
+          continue;
+        }
+
+        $method = strtolower($tokens[$i + 2][1]);
+        $depth = 0;
+        $argument = 0;
+        $path = null;
+        $permission = false;
+        // The options are the third argument, the fourth of request(): null while none is seen.
+        $optionsAt = $method === 'request' ? 3 : 2;
+        $options = null;
+
+        for ($j = $i + 3; $j < $count; $j++) {
+          $token = $tokens[$j];
+          $text = is_array($token) ? $token[1] : $token;
+
+          if ($depth === 1 && $argument === $optionsAt && $options === null && $text !== ',' && $text !== ')') {
+            $options = $text === '[' || (is_array($token) && $token[0] === T_ARRAY) ? 'literal' : 'other';
+          }
+
+          if (in_array($text, ['(', '[', '{'], true) || (is_array($token) && in_array($token[0], [T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES, T_ATTRIBUTE], true))) {
+            $depth++;
+          } elseif (in_array($text, [')', ']', '}'], true)) {
+            if (--$depth === 0) {
+              break;
+            }
+          } elseif ($text === ',' && $depth === 1) {
+            $argument++;
+          } elseif (is_array($token) && $token[0] === T_CONSTANT_ENCAPSED_STRING) {
+            // The path is the first argument, or the second of request(), whose first is the verbs.
+            if ($path === null && $depth === 1 && $argument === ($method === 'request' ? 1 : 0)) {
+              $path = $token[1];
+            }
+
+            $isKey = is_array($tokens[$j + 1] ?? null) && $tokens[$j + 1][0] === T_DOUBLE_ARROW;
+
+            if ($argument === $optionsAt && $depth === 2 && $isKey && substr($token[1], 1, -1) === 'permission_callback'
+              && !$this->isEmptyValue($tokens, $j + 2)) {
+              $permission = true;
+            }
+          }
+        }
+
+        if ($options === 'other') {
+          $found[] = [$tokens[$i][2], 'Route::' . $method . '(' . ($path ?? '…') . ')', false];
+        } elseif (!$permission) {
+          $found[] = [$tokens[$i][2], 'Route::' . $method . '(' . ($path ?? '…') . ')', true];
+        }
+      }
+
+      return $found;
+    }
+
+    /**
+     * The tokens of a PHP source without whitespace and comments.
+     */
+    protected function codeTokens(string $code): array
+    {
+      return array_values(array_filter(
+        token_get_all($code),
+        fn($token) => !is_array($token) || !in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
+      ));
+    }
+
+    /**
+     * A 2.x seeder rewritten as a 3.0 migration: the body of run() becomes up(), and the helpers
+     * that used the seeder's own table (insert(), truncate(), count()) name it.
+     *
+     * @return array{0: ?string, 1: string[]} The migration's code, or null when the seeder is not
+     *                                        one this can convert, and the notes for the review.
+     */
+    protected function seederToMigration(string $file, string $namespace): array
+    {
+      $source = (string) file_get_contents($file);
+      $tokens = token_get_all($source);
+
+      // The seeder's settings, read from its code and not from its comments: a commented-out
+      // `$runOnce = true;` must not add a guard.
+      $code = '';
+      foreach ($tokens as $token) {
+        if (!is_array($token) || !in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) {
+          $code .= is_array($token) ? $token[1] : $token;
+        }
+      }
+
+      $table = preg_match('/\$tablename\s*=\s*([\'"])([A-Za-z0-9_]+)\1\s*;/', $code, $m) ? $m[2] : null;
+      $usePrefix = !preg_match('/\$usePrefix\s*=\s*false\s*;/i', $code);
+      $runOnce = (bool) preg_match('/\$runOnce\s*=\s*true\s*;/i', $code);
+      $fileNamespace = preg_match('/^\s*namespace\s+([A-Za-z0-9_\\\\]+)\s*;/m', $code, $m) ? $m[1] : null;
+
+      // The methods it declares, and where run() begins and ends.
+      $methods = [];
+      $body = null;
+      $count = count($tokens);
+
+      for ($i = 0; $i < $count; $i++) {
+        if (!is_array($tokens[$i]) || $tokens[$i][0] !== T_FUNCTION) {
+          continue;
+        }
+
+        $j = $i + 1;
+        while ($j < $count && is_array($tokens[$j]) && $tokens[$j][0] === T_WHITESPACE) {
+          $j++;
+        }
+
+        if (!is_array($tokens[$j]) || $tokens[$j][0] !== T_STRING) {
+          continue; // a closure
+        }
+
+        $methods[] = $tokens[$j][1];
+
+        if ($tokens[$j][1] !== 'run' || $body !== null) {
+          continue;
+        }
+
+        // The opening brace of run(), then its match.
+        while ($j < $count && $tokens[$j] !== '{') {
+          $j++;
+        }
+
+        $depth = 0;
+        for ($k = $j; $k < $count; $k++) {
+          $text = is_array($tokens[$k]) ? $tokens[$k][1] : $tokens[$k];
+
+          if ($tokens[$k] === '{' || (is_array($tokens[$k]) && in_array($tokens[$k][0], [T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES], true))) {
+            $depth++;
+          } elseif ($tokens[$k] === '}') {
+            $depth--;
+
+            if ($depth === 0) {
+              $body = array_slice($tokens, $j + 1, $k - $j - 1);
+              break;
+            }
+          }
+        }
+      }
+
+      if ($body === null) {
+        return [null, ['no run() method found: convert it by hand']];
+      }
+
+      if ($methods !== ['run']) {
+        return [null, ['it declares methods besides run(): convert it by hand']];
+      }
+
+      // The body, with the table named where the 2.x helpers took it for granted.
+      $code = '';
+      $usesTable = false;
+      $usesWpdb = false;
+      $needsTable = false;
+      $truncatesByName = false;
+      $n = count($body);
+
+      // The index of the next token that is not white space.
+      $next = function (int $from) use ($body, $n): int {
+        while ($from < $n && is_array($body[$from]) && $body[$from][0] === T_WHITESPACE) {
+          $from++;
+        }
+
+        return $from;
+      };
+
+      for ($i = 0; $i < $n; $i++) {
+        $token = $body[$i];
+        $text = is_array($token) ? $token[1] : $token;
+
+        if (is_array($token) && $token[0] === T_VARIABLE && $text === '$this') {
+          // $this->name, also spelled `$this -> name` or `$this?->name`
+          $j = $next($i + 1);
+          $arrow = $j < $n && is_array($body[$j]) && in_array($body[$j][0], [T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR], true);
+          $at = $arrow ? $next($j + 1) : $n;
+          $member = $at < $n && is_array($body[$at]) && $body[$at][0] === T_STRING ? $body[$at][1] : null;
+
+          if ($member === 'tablename') {
+            $usesTable = true;
+          }
+
+          if ($member === 'wpdb') {
+            $usesWpdb = true;
+          }
+
+          if (in_array($member, ['insert', 'truncate', 'count'], true)) {
+            $k = $at + 1;
+            while ($k < $n && is_array($body[$k]) && $body[$k][0] === T_WHITESPACE) {
+              $k++;
+            }
+
+            if ($k < $n && $body[$k] === '(') {
+              $m = $k + 1;
+              while ($m < $n && is_array($body[$m]) && $body[$m][0] === T_WHITESPACE) {
+                $m++;
+              }
+
+              if ($member === 'truncate' && $body[$m] !== ')') {
+                $truncatesByName = true;
+              }
+
+              // insert($sql) gains the table first; truncate() and count() only when called bare.
+              if ($member === 'insert' || $body[$m] === ')') {
+                $needsTable = true;
+                // No space before a line break: the argument may start on the next line.
+                $separator = $body[$m] === ')' ? '' : ($m > $k + 1 && str_contains($body[$k + 1][1], "\n") ? ',' : ', ');
+                $code .= "\$this->{$member}(" . var_export((string) $table, true) . $separator;
+                $i = $k;
+                continue;
+              }
+            }
+          }
+        }
+
+        $code .= $text;
+      }
+
+      if (($needsTable || $usesTable || $runOnce) && $table === null) {
+        return [null, ['it uses its table but sets no $tablename: convert it by hand']];
+      }
+
+      $notes = [];
+      $properties = '';
+      $prelude = '';
+
+      if (!$usePrefix) {
+        $properties .= "  protected \$usePrefix = false;\n\n";
+      }
+
+      if ($usesTable) {
+        $properties .= "  /** The prefixed table name, as the 2.x seeder had it in \$this->tablename. */\n  protected \$tablename;\n\n";
+        $prelude .= "    \$this->tablename = \$this->table('{$table}');\n\n";
+      }
+
+      if ($usesWpdb) {
+        $properties .= "  /** The wpdb object, as the 2.x seeder had it in \$this->wpdb. */\n  protected \$wpdb;\n\n";
+        $prelude .= "    \$this->wpdb = \$GLOBALS['wpdb'];\n\n";
+      }
+
+      if (!$usePrefix && $truncatesByName) {
+        $notes[] = "it calls truncate() with a table name and has \$usePrefix = false: 2.x prefixed that name anyway, a migration does not, so check which table it empties";
+      }
+
+      if ($runOnce) {
+        $prelude .= "    // The seeder had \$runOnce: it seeded the table only while it was empty, and so does this.\n";
+        $prelude .= "    if (!\$this->isEmpty('{$table}')) {\n      return;\n    }\n\n";
+      } else {
+        $notes[] = 'it ran on every activation and update until 2.x and runs once now: if it refreshed reference data, refresh it with a new migration when the data changes';
+      }
+
+      // The use statements the seeder had, but its base class.
+      $uses = [];
+      foreach (preg_split('/\R/', $source) as $line) {
+        if (preg_match('/^use\s+([^;]+);/', trim($line), $use) && !preg_match('/\\\\WPBones\\\\Database\\\\Seeder$/', trim($use[1]))) {
+          $uses[] = trim($line);
+        }
+      }
+
+      // A namespace declaration has to come first, before the ABSPATH guard.
+      $migration = "<?php\n\n" . ($fileNamespace === null ? '' : "namespace {$fileNamespace};\n\n");
+      $migration .= "if (!defined('ABSPATH')) {\n  exit();\n}\n\n";
+      $migration .= "use {$namespace}\\WPBones\\Database\\Migration;\n";
+      $migration .= $uses === [] ? '' : implode("\n", $uses) . "\n";
+      $migration .= "\n/*\n * Converted from " . $file . " by php bones migrate:to-v3.\n */\n";
+      $migration .= "return new class extends Migration {\n";
+      $migration .= $properties;
+      $migration .= "  public function up()\n  {\n";
+      $migration .= $prelude;
+      $migration .= rtrim(ltrim($code, "\r\n"), " \t\r\n") . "\n";
+      $migration .= "  }\n};\n";
+
+      return [$migration, $notes];
     }
 
     /**
