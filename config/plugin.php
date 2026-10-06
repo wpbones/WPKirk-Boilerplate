@@ -42,17 +42,19 @@ return [
      * Usually, this is located in the wp-content/debug.log file.
      *
      * - "single", the log will be saved in a single file in the log_path directory.
-     * Default: [plugin-path]/storage/logs/debug.log
+     * Default: wp-content/uploads/wpbones/[plugin-folder]/logs/debug-[hash].log
      *
      * - "daily", the log will be saved in a daily file in the log_path directory.
-     * Default: [plugin-path]/storage/logs/[Y-m-d].log
-     * Example: [plugin-path]/storage/logs/2024-10-09.log
+     * Default: wp-content/uploads/wpbones/[plugin-folder]/logs/[Y-m-d]-[hash].log
+     * Example: wp-content/uploads/wpbones/my-plugin/logs/2024-10-09-1a2b3c4d5e6f.log
+     *
+     * The [hash] is keyed with the site's AUTH_SALT, so that the name cannot be guessed.
      */
     "type" => "errorlog",
 
     /**
-     * The path where the log will be saved.
-     * Default: [plugin-path]/storage/logs/
+     * The path where the log will be saved: keep it outside the web root.
+     * Default: wp-content/uploads/wpbones/[plugin-folder]/logs/
      */
     //"path" => '',
 
