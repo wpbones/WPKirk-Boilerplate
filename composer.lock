@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5df3e1eeab1f9bad72baef5beb0b2484",
+    "content-hash": "72ba8a2398d74105abf750de10dfdf33",
     "packages": [
         {
             "name": "eftec/bladeone",
@@ -300,16 +300,16 @@
         },
         {
             "name": "wpbones/wpbones",
-            "version": "v2.1.0",
+            "version": "v2.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/WPBones.git",
-                "reference": "7dd5619b14671c862431941ba57b7548960c13d0"
+                "reference": "2e5bf712b73b797bb00e7f7b6d557df3ab44e038"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/7dd5619b14671c862431941ba57b7548960c13d0",
-                "reference": "7dd5619b14671c862431941ba57b7548960c13d0",
+                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/2e5bf712b73b797bb00e7f7b6d557df3ab44e038",
+                "reference": "2e5bf712b73b797bb00e7f7b6d557df3ab44e038",
                 "shasum": ""
             },
             "require": {
@@ -360,7 +360,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-09-25T12:12:57+00:00"
+            "time": "2026-10-06T09:26:19+00:00"
         },
         {
             "name": "wpbones/wpkirk-helpers",
