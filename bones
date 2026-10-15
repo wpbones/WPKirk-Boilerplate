@@ -720,7 +720,7 @@ namespace Bones {
   define('WPBONES_MINIMAL_PHP_VERSION', '8.1');
 
   /* MARK: The WP Bones command line version. */
-  define('WPBONES_COMMAND_LINE_VERSION', '3.1.0');
+  define('WPBONES_COMMAND_LINE_VERSION', '3.2.0');
 
   use Bones\SemVer\Exceptions\InvalidVersionException;
   use Bones\SemVer\Version;
@@ -1673,6 +1673,46 @@ namespace Bones {
       }
 
       return $other ? $stubs : ['/' . self::PLUGIN_STUBS];
+    }
+
+    /**
+     * The JavaScript tests that sit beside the code they test, found the way the jest.config.js
+     * written by `migrate:to-v2` finds them: every `__tests__` folder, and every `*.test.*` or
+     * `*.spec.*` script, with the `__snapshots__` and `__mocks__` folders Jest keeps beside them.
+     * They live in resources/assets, which `--wp` ships. The skip list matches exact paths, so
+     * each one is listed where it is.
+     *
+     * vendor/ and node_modules/ are not walked: they are not the plugin's own code. Neither is a
+     * folder that cannot be read, which the copy could not read either.
+     *
+     * @since 3.2.0
+     * @param string $relative The folder to walk, relative to the plugin root.
+     * @return string[] Entries of the deploy skip list.
+     */
+    protected function javascriptTestsToSkip(string $relative = ''): array
+    {
+      $entries = [];
+
+      foreach (scandir(__DIR__ . $relative) ?: [] as $name) {
+        // The deploy never copies a dot entry, so there is nothing to list in one.
+        if (strpos($name, '.') === 0 || in_array($name, ['vendor', 'node_modules'], true)) {
+          continue;
+        }
+
+        $path = "{$relative}/{$name}";
+
+        if (is_dir(__DIR__ . $path)) {
+          if (in_array($name, ['__tests__', '__snapshots__', '__mocks__'], true)) {
+            $entries[] = $path;
+          } elseif (!is_link(__DIR__ . $path) && is_readable(__DIR__ . $path)) {
+            $entries = array_merge($entries, $this->javascriptTestsToSkip($path));
+          }
+        } elseif (preg_match('/\.(test|spec)\.(ts|tsx|js|jsx)$/', $name)) {
+          $entries[] = $path;
+        }
+      }
+
+      return $entries;
     }
 
     /**
@@ -2719,6 +2759,14 @@ namespace Bones {
         '/phpcs.xml.dist',
         '/mix-manifest.json',
         '/release.sh',
+        // The plugin's test suites: PHPUnit's, where PHPUnit looks for it, and Jest's.
+        '/tests',
+        '/phpunit.xml',
+        '/phpunit.xml.dist',
+        '/phpunit.dist.xml',
+        '/jest.config.js',
+        '/jest.config.json',
+        ...$this->javascriptTestsToSkip(),
         ...$this->pluginStubsToSkip(),
       ]);
 
@@ -2758,6 +2806,8 @@ namespace Bones {
       if (!$keep_dev) {
         $this->pruneDevPackages($path);
       }
+
+      $this->assertAutoloadedFilesShipped($path, $is_create_zip);
 
       /**
        * Fires when the console deploy is completed.
@@ -3108,6 +3158,47 @@ namespace Bones {
         $this->error("`composer install --no-dev` failed in the package, which still holds the dev packages:\n" . implode("\n", $output));
         exit(1);
       }
+    }
+
+    /**
+     * Stop when the package's Composer autoloader requires a file the package does not hold.
+     *
+     * Composer requires its `files` entries on every request, so one that points at a path the
+     * deploy left out is a fatal error the moment the plugin loads. It happens when autoload-dev
+     * names a file in `tests/` and the dev autoloader stays: with --keep-dev, or when no dev
+     * package is installed and so none is pruned and the autoloader is not rebuilt.
+     *
+     * @since 3.2.0
+     * @param string $path The deployed copy.
+     * @param bool $isTemporary True when the copy is the folder a zip is made from.
+     */
+    protected function assertAutoloadedFilesShipped(string $path, bool $isTemporary): void
+    {
+      $map = "{$path}/vendor/composer/autoload_files.php";
+
+      if (!is_file($map)) {
+        return;
+      }
+
+      // The map works out its paths from where it sits, so in the copy they point into the copy.
+      $files = (static fn() => require $map)();
+      $missing = array_filter(is_array($files) ? $files : [], fn($file) => !is_file($file));
+
+      if (empty($missing)) {
+        return;
+      }
+
+      $root = (realpath($path) ?: $path) . '/';
+      $list = implode(', ', array_map(fn($file) => str_replace($root, '', $file), $missing));
+
+      if ($isTemporary) {
+        $this->deleteDirectory($path);
+      }
+
+      $this->error(
+        "The package's Composer autoloader requires files the deploy left out ({$list}), so the plugin would stop with a fatal error as it loads. Move them out of composer.json's autoload-dev, or keep them in the package with the wpbones_console_deploy_default_skip_files_folders filter.",
+      );
+      exit(1);
     }
 
     /**
