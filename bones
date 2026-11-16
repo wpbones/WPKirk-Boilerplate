@@ -720,7 +720,7 @@ namespace Bones {
   define('WPBONES_MINIMAL_PHP_VERSION', '8.1');
 
   /* MARK: The WP Bones command line version. */
-  define('WPBONES_COMMAND_LINE_VERSION', '3.2.0');
+  define('WPBONES_COMMAND_LINE_VERSION', '3.3.0');
 
   use Bones\SemVer\Exceptions\InvalidVersionException;
   use Bones\SemVer\Version;
@@ -773,6 +773,22 @@ namespace Bones {
      * @since 3.1.0
      */
     const PLUGIN_STUBS = 'stubs';
+
+    /**
+     * The instruction files coding agents read from a repository: AGENTS.md (Codex, Cursor,
+     * Copilot and most others) with Codex's override, AGENT.md, Claude Code's CLAUDE.md and
+     * CLAUDE.local.md, Gemini CLI's GEMINI.md. A deploy leaves them out wherever they are.
+     *
+     * @since 3.3.0
+     */
+    const AGENT_INSTRUCTIONS = [
+      'AGENTS.md',
+      'AGENTS.override.md',
+      'AGENT.md',
+      'CLAUDE.md',
+      'CLAUDE.local.md',
+      'GEMINI.md',
+    ];
 
     /**
      * Used for additional kernel command.
@@ -1679,36 +1695,70 @@ namespace Bones {
      * The JavaScript tests that sit beside the code they test, found the way the jest.config.js
      * written by `migrate:to-v2` finds them: every `__tests__` folder, and every `*.test.*` or
      * `*.spec.*` script, with the `__snapshots__` and `__mocks__` folders Jest keeps beside them.
-     * They live in resources/assets, which `--wp` ships. The skip list matches exact paths, so
-     * each one is listed where it is.
+     * They live in resources/assets, which `--wp` ships.
      *
-     * vendor/ and node_modules/ are not walked: they are not the plugin's own code. Neither is a
-     * folder that cannot be read, which the copy could not read either.
+     * vendor/ and node_modules/ are not walked: they are not the plugin's own code.
      *
      * @since 3.2.0
+     * @return string[] Entries of the deploy skip list.
+     */
+    protected function javascriptTestsToSkip(): array
+    {
+      return $this->pathsToSkip(
+        fn(string $name, bool $isDir) => $isDir
+          ? in_array($name, ['__tests__', '__snapshots__', '__mocks__'], true)
+          : (bool) preg_match('/\.(test|spec)\.(ts|tsx|js|jsx)$/', $name),
+        ['vendor', 'node_modules'],
+      );
+    }
+
+    /**
+     * The agent instruction files, wherever they are: vendor/ included, since none of them is
+     * ever something a plugin runs. The root node_modules/ is not walked, the deploy leaves it
+     * out whole; one deeper down, which `--wp` can ship from resources/assets, is.
+     *
+     * @since 3.3.0
+     * @return string[] Entries of the deploy skip list.
+     */
+    protected function agentInstructionsToSkip(): array
+    {
+      return $this->pathsToSkip(
+        fn(string $name, bool $isDir) => !$isDir && in_array($name, self::AGENT_INSTRUCTIONS, true),
+        ['/node_modules'],
+      );
+    }
+
+    /**
+     * Walk the plugin and list the paths $matches picks. The skip list matches exact paths, so
+     * each one is listed where it is; a folder picked is listed whole and not walked.
+     *
+     * Not walked either: a dot entry, which the deploy never copies, a folder in $prune, a linked
+     * folder, and a folder that cannot be read, which the copy could not read either.
+     *
+     * @since 3.3.0
+     * @param callable(string, bool): bool $matches Given an entry's name and whether it is a folder.
+     * @param string[] $prune Folders not to walk: a name, at any depth, or a path from the plugin
+     *                        root, with its leading slash.
      * @param string $relative The folder to walk, relative to the plugin root.
      * @return string[] Entries of the deploy skip list.
      */
-    protected function javascriptTestsToSkip(string $relative = ''): array
+    protected function pathsToSkip(callable $matches, array $prune, string $relative = ''): array
     {
       $entries = [];
 
       foreach (scandir(__DIR__ . $relative) ?: [] as $name) {
-        // The deploy never copies a dot entry, so there is nothing to list in one.
-        if (strpos($name, '.') === 0 || in_array($name, ['vendor', 'node_modules'], true)) {
+        $path = "{$relative}/{$name}";
+
+        if (strpos($name, '.') === 0 || in_array($name, $prune, true) || in_array($path, $prune, true)) {
           continue;
         }
 
-        $path = "{$relative}/{$name}";
+        $isDir = is_dir(__DIR__ . $path);
 
-        if (is_dir(__DIR__ . $path)) {
-          if (in_array($name, ['__tests__', '__snapshots__', '__mocks__'], true)) {
-            $entries[] = $path;
-          } elseif (!is_link(__DIR__ . $path) && is_readable(__DIR__ . $path)) {
-            $entries = array_merge($entries, $this->javascriptTestsToSkip($path));
-          }
-        } elseif (preg_match('/\.(test|spec)\.(ts|tsx|js|jsx)$/', $name)) {
+        if ($matches($name, $isDir)) {
           $entries[] = $path;
+        } elseif ($isDir && !is_link(__DIR__ . $path) && is_readable(__DIR__ . $path)) {
+          $entries = array_merge($entries, $this->pathsToSkip($matches, $prune, $path));
         }
       }
 
@@ -2768,6 +2818,7 @@ namespace Bones {
         '/jest.config.json',
         ...$this->javascriptTestsToSkip(),
         ...$this->pluginStubsToSkip(),
+        ...$this->agentInstructionsToSkip(),
       ]);
 
       // The new strict rules require that the composer must also be released to publish the plugin in the WordPress.org repository.

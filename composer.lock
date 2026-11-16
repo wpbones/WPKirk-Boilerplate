@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "474c1b3db0274f3d6db19be328422118",
+    "content-hash": "c65df48311ffe4a7cca3be86dd78b132",
     "packages": [
         {
             "name": "eftec/bladeone",
@@ -63,20 +63,21 @@
                 "issues": "https://github.com/EFTEC/BladeOne/issues",
                 "source": "https://github.com/EFTEC/BladeOne/tree/4.19.1"
             },
-            "time": "2025-09-03T20:50:39+00:00"
+            "time": "2025-09-03T20:50:39+00:00",
+            "published-time": "2025-09-03T20:51:22+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
-            "version": "v3.7.1",
+            "version": "v3.8.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/deprecation-contracts.git",
-                "reference": "f3202fa1b5097b0af062dc978b32ecf63404e31d"
+                "reference": "feb1edf4e546af3b85c5caebe8359a20db230ca3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/f3202fa1b5097b0af062dc978b32ecf63404e31d",
-                "reference": "f3202fa1b5097b0af062dc978b32ecf63404e31d",
+                "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/feb1edf4e546af3b85c5caebe8359a20db230ca3",
+                "reference": "feb1edf4e546af3b85c5caebe8359a20db230ca3",
                 "shasum": ""
             },
             "require": {
@@ -89,7 +90,7 @@
                     "name": "symfony/contracts"
                 },
                 "branch-alias": {
-                    "dev-main": "3.7-dev"
+                    "dev-main": "3.8-dev"
                 }
             },
             "autoload": {
@@ -114,7 +115,7 @@
             "description": "A generic function and convention to trigger deprecation notices",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/deprecation-contracts/tree/v3.7.1"
+                "source": "https://github.com/symfony/deprecation-contracts/tree/v3.8.1"
             },
             "funding": [
                 {
@@ -134,7 +135,8 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-06-05T06:23:12+00:00"
+            "time": "2026-09-16T14:15:10+00:00",
+            "published-time": "2026-11-04T11:25:34+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",
@@ -217,20 +219,21 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-04-10T16:19:22+00:00"
+            "time": "2026-04-10T16:19:22+00:00",
+            "published-time": "2026-04-26T14:44:50+00:00"
         },
         {
             "name": "symfony/yaml",
-            "version": "v5.4.54",
+            "version": "v5.4.56",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "f27a7131106e8cb792d434e8faea7f3ffb615263"
+                "reference": "8ff81e554b0d78653a146b35e344e0a022d7e838"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/f27a7131106e8cb792d434e8faea7f3ffb615263",
-                "reference": "f27a7131106e8cb792d434e8faea7f3ffb615263",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/8ff81e554b0d78653a146b35e344e0a022d7e838",
+                "reference": "8ff81e554b0d78653a146b35e344e0a022d7e838",
                 "shasum": ""
             },
             "require": {
@@ -276,7 +279,7 @@
             "description": "Loads and dumps YAML files",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/yaml/tree/v5.4.54"
+                "source": "https://github.com/symfony/yaml/tree/v5.4.56"
             },
             "funding": [
                 {
@@ -296,20 +299,21 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-08-30T06:09:20+00:00"
+            "time": "2026-11-03T13:19:21+00:00",
+            "published-time": "2026-11-04T10:51:46+00:00"
         },
         {
             "name": "wpbones/wpbones",
-            "version": "v3.2.0",
+            "version": "v3.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/WPBones.git",
-                "reference": "25bcb58ba9477b075f69b03edce0b58dc30ace79"
+                "reference": "63c99a75a9f9e62e2501433a01a5b515b333fb71"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/25bcb58ba9477b075f69b03edce0b58dc30ace79",
-                "reference": "25bcb58ba9477b075f69b03edce0b58dc30ace79",
+                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/63c99a75a9f9e62e2501433a01a5b515b333fb71",
+                "reference": "63c99a75a9f9e62e2501433a01a5b515b333fb71",
                 "shasum": ""
             },
             "require": {
@@ -360,7 +364,8 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-15T16:52:40+00:00"
+            "time": "2026-11-16T13:25:17+00:00",
+            "published-time": "2026-11-16T13:25:35+00:00"
         },
         {
             "name": "wpbones/wpkirk-helpers",
@@ -422,5 +427,5 @@
         "php": ">=8.1"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.11.0"
 }
