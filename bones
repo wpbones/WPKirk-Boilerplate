@@ -720,7 +720,7 @@ namespace Bones {
   define('WPBONES_MINIMAL_PHP_VERSION', '8.1');
 
   /* MARK: The WP Bones command line version. */
-  define('WPBONES_COMMAND_LINE_VERSION', '3.3.0');
+  define('WPBONES_COMMAND_LINE_VERSION', '3.3.1');
 
   use Bones\SemVer\Exceptions\InvalidVersionException;
   use Bones\SemVer\Version;
@@ -810,6 +810,9 @@ namespace Bones {
      * @var string
      */
     protected string $rootDeploy = '';
+
+    /** The first path a deploy could not write, set by xcopy(). */
+    protected ?string $copyFailure = null;
 
     /**
      * WP-CLI version
@@ -2619,17 +2622,23 @@ namespace Bones {
      */
     public function deleteDirectory(string $path)
     {
-      $path = rtrim($path, '/');
+      // No glob(): a "[", "*", "?" or "{" in the path is a pattern, not a name. A link is
+      // unlinked, never followed into the folder it points at.
+      foreach (scandir($path) ?: [] as $entry) {
+        if ($entry === '.' || $entry === '..') {
+          continue;
+        }
 
-      array_map(function ($file) {
-        if (is_dir($file)) {
+        $file = rtrim($path, '/') . '/' . $entry;
+
+        if (!is_link($file) && is_dir($file)) {
           $this->deleteDirectory($file);
         } else {
           @unlink($file);
         }
-      }, glob("{$path}/" . '{,.}[!.,!..]*', GLOB_MARK | GLOB_BRACE));
+      }
 
-      @rmdir("{$path}");
+      @rmdir($path);
     }
 
     /**
@@ -2851,7 +2860,17 @@ namespace Bones {
       $this->rootDeploy = __DIR__;
 
       $this->startProgress("Copying to 📁 {$path}");
-      $this->xcopy(__DIR__, $path);
+      $copied = $this->xcopy(__DIR__, $path);
+
+      if (!$copied) {
+        if ($is_create_zip && is_dir($path)) {
+          $this->deleteDirectory($path);
+        }
+
+        $this->error("Deploy failed: could not write '{$this->copyFailure}'. The destination is incomplete.");
+        exit(1);
+      }
+
       $this->endProgress();
 
       if (!$keep_dev) {
@@ -3019,6 +3038,10 @@ namespace Bones {
     /**
      * Copy a whole folder. Used by deploy()
      *
+     * Missing parents of $dest are created, as `mkdir -p` would. A file left out on purpose
+     * (a dotfile, the skip list) is not a failure: false means a write failed, and
+     * $copyFailure holds the path.
+     *
      * @param string $source The source path
      * @param string $dest The target path
      * @param int|null $permissions The permissions to set
@@ -3029,7 +3052,7 @@ namespace Bones {
     {
       // Check for symlinks
       if (is_link($source)) {
-        return symlink(readlink($source), $dest);
+        return @symlink(readlink($source), $dest) || $this->copyFailed($dest);
       }
 
       // Simple copy for a file
@@ -3038,14 +3061,30 @@ namespace Bones {
         // we don't copy it
 
         if (strpos(basename($source), '.') === 0 || $this->skip($source)) {
-          return false;
+          return true;
         }
-        return copy($source, $dest);
+
+        return @copy($source, $dest) || $this->copyFailed($dest);
       }
 
-      // Make destination directory
-      if (!is_dir($dest)) {
-        mkdir($dest, $permissions);
+      // Make destination directory, and its missing parents from the top down. Not mkdir()'s
+      // recursive flag: PHP collapses "link/.." lexically, while the guard resolved the link first.
+      $missing = [];
+
+      for ($dir = $dest; !is_dir($dir); $dir = dirname($dir)) {
+        // A "." or ".." after a missing folder would resolve differently once that folder exists,
+        // through a link the guard never followed; and dirname() stops changing at the root.
+        if (in_array(basename($dir), ['.', '..'], true) || dirname($dir) === $dir) {
+          return $this->copyFailed($dir);
+        }
+
+        array_unshift($missing, $dir);
+      }
+
+      foreach ($missing as $dir) {
+        if (!@mkdir($dir, $permissions) && !is_dir($dir)) {
+          return $this->copyFailed($dir);
+        }
       }
 
       // Loop through the folder
@@ -3058,13 +3097,27 @@ namespace Bones {
         }
 
         // Deep copy directories
-        $this->xcopy("{$source}/{$entry}", "{$dest}/{$entry}", $permissions);
+        if (!$this->xcopy("{$source}/{$entry}", "{$dest}/{$entry}", $permissions)) {
+          $dir->close();
+
+          return false;
+        }
       }
 
       // Clean up
       $dir->close();
 
       return true;
+    }
+
+    /**
+     * Remember the first path a deploy could not write. Always false, for `|| $this->copyFailed()`.
+     */
+    protected function copyFailed(string $path): bool
+    {
+      $this->copyFailure ??= $path;
+
+      return false;
     }
 
     /**
