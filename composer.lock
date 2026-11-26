@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bf612bb67302a9cbbbd226d372abbf6e",
+    "content-hash": "421ce7b162e914c056c7b9a9035cfcc6",
     "packages": [
         {
             "name": "eftec/bladeone",
@@ -224,16 +224,16 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v5.4.56",
+            "version": "v5.4.57",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "8ff81e554b0d78653a146b35e344e0a022d7e838"
+                "reference": "73f95622dbbab664af9db510424f267807bd1080"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/8ff81e554b0d78653a146b35e344e0a022d7e838",
-                "reference": "8ff81e554b0d78653a146b35e344e0a022d7e838",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/73f95622dbbab664af9db510424f267807bd1080",
+                "reference": "73f95622dbbab664af9db510424f267807bd1080",
                 "shasum": ""
             },
             "require": {
@@ -279,7 +279,7 @@
             "description": "Loads and dumps YAML files",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/yaml/tree/v5.4.56"
+                "source": "https://github.com/symfony/yaml/tree/v5.4.57"
             },
             "funding": [
                 {
@@ -299,21 +299,21 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-11-03T13:19:21+00:00",
-            "published-time": "2026-11-04T10:51:46+00:00"
+            "time": "2026-11-05T16:36:45+00:00",
+            "published-time": "2026-11-25T09:17:04+00:00"
         },
         {
             "name": "wpbones/wpbones",
-            "version": "v3.3.1",
+            "version": "v3.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wpbones/WPBones.git",
-                "reference": "74fe87de69a7451762016aba36d9faf052b8fdd7"
+                "reference": "8e587eecf5e6551668fffdfbc4d00f8c087743aa"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/74fe87de69a7451762016aba36d9faf052b8fdd7",
-                "reference": "74fe87de69a7451762016aba36d9faf052b8fdd7",
+                "url": "https://api.github.com/repos/wpbones/WPBones/zipball/8e587eecf5e6551668fffdfbc4d00f8c087743aa",
+                "reference": "8e587eecf5e6551668fffdfbc4d00f8c087743aa",
                 "shasum": ""
             },
             "require": {
@@ -364,8 +364,8 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-11-23T10:53:11+00:00",
-            "published-time": "2026-11-23T10:54:24+00:00"
+            "time": "2026-11-26T07:40:42+00:00",
+            "published-time": "2026-11-26T07:42:09+00:00"
         },
         {
             "name": "wpbones/wpkirk-helpers",
